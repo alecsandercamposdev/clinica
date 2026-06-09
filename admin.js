@@ -7,7 +7,7 @@
 const API_URL = '/api';
 let profissionalEditId = null;
 let videoEditId = null;
-
+let fotoOriginalProfissional = null;
 /**
  * Verificar se usuário está autenticado
  */
@@ -230,14 +230,14 @@ async function editarProfissional(id) {
     if (!profissional) return;
     
     profissionalEditId = id;
-    
+    fotoOriginalProfissional = profissional.foto;
     // Preencher formulário de edição
     document.getElementById('editNome').value = profissional.nome;
     document.getElementById('editEspecialidade').value = profissional.especialidade;
-    document.getElementById('editCadastro').value = profissional.cadastroMedico;
+    document.getElementById('editCadastro').value = profissional.cadastromedico;
     document.getElementById('editApresentacao').value = profissional.apresentacao;
     document.getElementById('editAtuacao').value = profissional.atuacao;
-    
+    document.getElementById('editNome').value = profissional.nome;
     // Mostrar preview da foto atual
     if (profissional.foto) {
         document.getElementById('editFotoPreview').innerHTML = `<img src="${profissional.foto}" alt="Preview">`;
@@ -273,17 +273,13 @@ document.getElementById('profissionalEditForm')?.addEventListener('submit', asyn
         fotoAtualizada = await converterParaBase64(novaFoto);
     }
 
-    const profissionalAtualizado = {
+const profissionalAtualizado = {
         nome: document.getElementById('editNome').value,
         especialidade: document.getElementById('editEspecialidade').value,
-        cadastroMedico: document.getElementById('editCadastro').value,
+        cadastromedico: document.getElementById('editCadastro').value, 
         apresentacao: document.getElementById('editApresentacao').value,
-        atuacao: document.getElementById('editAtuacao').value
-    };
-
-    // Adicionar foto se foi alterada
-    if (fotoAtualizada) {
-        profissionalAtualizado.foto = fotoAtualizada;
+        atuacao: document.getElementById('editAtuacao').value,
+        foto: fotoAtualizada ? fotoAtualizada : fotoOriginalProfissional
     }
 
     try {
