@@ -4,7 +4,7 @@
  * Integração com API REST
  */
 
-const API_URL = 'http://localhost:3000/api';
+const API_URL = '/api';
 let profissionalEditId = null;
 let videoEditId = null;
 
