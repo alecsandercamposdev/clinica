@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Conheça os profissionais especializados da FACCES Clínica Dentária em Guaratinguetá. Profissionais qualificados com experiência em odontologia.">
+    <meta name="keywords" content="dentista, profissional odontológico, especialista em odontologia, guaratinguetá">
+    <meta name="robots" content="index, follow">
+    <meta name="canonical" id="canonicalUrl" href="https://seu-site.com/profissional.html">
+    <meta property="og:title" content="Profissional - FACCES Clínica Dentária">
+    <meta property="og:description" content="Conheça o profissional especializado que cuidará da sua saúde bucal">
+    <meta property="og:type" content="profile">
+    <meta property="og:url" id="ogUrl" content="https://seu-site.com/profissional.html">
+    <meta property="og:image" id="ogImage" content="https://seu-site.com/img/Clinica.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Profissional - FACCES">
+    <meta name="twitter:description" content="Conheça nossos profissionais qualificados">
+    <meta name="twitter:image" id="twitterImage" content="https://seu-site.com/img/Clinica.png">
+    <title id="pageTitle">Profissional - FACCES Clínica Dentária</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='75' font-size='75' fill='%23002B2B'>🦷</text></svg>">
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    <link rel="alternate" hreflang="pt-BR" href="https://seu-site.com/profissional.html">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="FACCES">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><text y='135' font-size='135' fill='%23002B2B'>🦷</text></svg>">
+    <style>
+        /* Estilos específicos da página de profissional */
+        .profissional-header {
+            background: linear-gradient(135deg, var(--cor-primaria) 0%, var(--cor-secundaria) 100%);
+            color: var(--cor-branco);
+            padding: var(--espaco-2xl) var(--espaco-lg);
+            margin-top: 80px;
+        }
+
+        .profissional-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: var(--espaco-2xl);
+            padding: var(--espaco-2xl);
+            align-items: start;
+        }
+
+        .profissional-foto {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .profissional-foto img {
+            width: 100%;
+            max-width: 500px;
+            border-radius: 15px;
+            box-shadow: var(--sombra-forte);
+            object-fit: cover;
+        }
+
+        .profissional-info {
+            background: var(--cor-branco);
+            padding: var(--espaco-lg);
+            border-radius: 10px;
+            box-shadow: var(--sombra-media);
+        }
+
+        .profissional-info h1 {
+            color: var(--cor-primaria);
+            font-size: 2.5rem;
+            margin-bottom: var(--espaco-md);
+            border-bottom: 3px solid var(--cor-destaque);
+            padding-bottom: var(--espaco-md);
+        }
+
+        .profissional-badge {
+            display: inline-block;
+            background: var(--cor-destaque);
+            color: var(--cor-branco);
+            padding: var(--espaco-xs) var(--espaco-md);
+            border-radius: 20px;
+            font-size: 0.9rem;
+            margin-bottom: var(--espaco-lg);
+            font-weight: bold;
+        }
+
+        .profissional-detail {
+            margin-bottom: var(--espaco-lg);
+        }
+
+        .profissional-detail-label {
+            font-weight: bold;
+            color: var(--cor-secundaria);
+            font-size: 1.1rem;
+            margin-bottom: var(--espaco-sm);
+            display: block;
+        }
+
+        .profissional-detail-value {
+            color: var(--cor-texto);
+            line-height: 1.6;
+            font-size: 1rem;
+        }
+
+        .profissional-apresentacao {
+            background: var(--cor-light);
+            padding: var(--espaco-lg);
+            border-left: 4px solid var(--cor-destaque);
+            border-radius: 5px;
+            line-height: 1.8;
+            text-align: justify;
+            color: var(--cor-texto);
+        }
+
+        .btn-voltar {
+            display: inline-block;
+            margin-top: var(--espaco-lg);
+            padding: var(--espaco-sm) var(--espaco-lg);
+            background: var(--cor-secundaria);
+            color: var(--cor-branco);
+            text-decoration: none;
+            border-radius: 5px;
+            transition: all var(--transicao-normal);
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        .btn-voltar:hover {
+            background: var(--cor-primaria);
+            transform: translateX(-5px);
+        }
+
+        .profissional-header-content {
+            max-width: 1000px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: var(--espaco-lg);
+        }
+
+        .profissional-header-titulo {
+            flex: 1;
+            min-width: 250px;
+        }
+
+        .profissional-header-titulo h1 {
+            margin: 0;
+            font-size: 2rem;
+        }
+
+        .profissional-header-titulo p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            margin: var(--espaco-sm) 0 0 0;
+        }
+
+        .btn-voltar-topo {
+            display: inline-block;
+            padding: var(--espaco-xs) var(--espaco-md);
+            background: rgba(255, 255, 255, 0.2);
+            color: var(--cor-branco);
+            text-decoration: none;
+            border-radius: 5px;
+            transition: all var(--transicao-normal);
+            border: 1px solid var(--cor-branco);
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+
+        .btn-voltar-topo:hover {
+            background: var(--cor-destaque);
+            border-color: var(--cor-destaque);
+            transform: translateX(-5px);
+        }
+
+        .profissional-agendar {
+            margin-top: var(--espaco-lg);
+        }
+
+        @media (max-width: 768px) {
+            .profissional-container {
+                grid-template-columns: 1fr;
+                padding: var(--espaco-lg);
+            }
+
+            .profissional-info h1 {
+                font-size: 1.8rem;
+            }
+
+            .profissional-header {
+                margin-top: 60px;
+                padding: var(--espaco-lg);
+            }
+
+            .profissional-header-content {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .profissional-header-titulo h1 {
+                font-size: 1.5rem;
+            }
+
+            .btn-voltar-topo {
+                width: 100%;
+                text-align: center;
+            }
+        }
+
+        .profissional-nao-encontrado {
+            text-align: center;
+            padding: var(--espaco-2xl);
+            background: #ffebee;
+            border-radius: 10px;
+            margin: var(--espaco-2xl);
+            color: var(--cor-erro);
+        }
+
+        .profissional-nao-encontrado h2 {
+            margin-bottom: var(--espaco-lg);
+        }
+    </style>
+</head>
+<body>
+    <!-- Header com Navegação Fixa -->
+    <header class="header" id="header">
+        <nav class="navbar">
+            <div class="navbar-container">
+                <div class="logo">
+                    <h1>FACCES</h1>
+                    <p class="tagline">Clínica Dentária</p>
+                </div>
+                
+                <button class="menu-toggle" id="menuToggle" aria-label="Abrir menu">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+
+                <ul class="nav-links" id="navLinks">
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="index.html#medicos">Profissionais</a></li>
+                    <li><a href="index.html#especialidades">Especialidades</a></li>
+                    <li><a href="index.html#contato">Contato</a></li>
+                </ul>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Conteúdo Principal -->
+    <main id="conteudo-profissional">
+        <!-- O conteúdo será carregado dinamicamente aqui -->
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-container">
+            <p>&copy; 2026 FACCES - Clínica Dentária. Todos os direitos reservados.</p>
+            <p>Desenvolvido com ❤️ para sua saúde bucal</p>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+    <script>
+        /**
+         * Carrega e exibe os detalhes do profissional
+         */
+        async function carregarProfissional() {
+            try {
+                // Obter o ID do profissional da URL
+                const params = new URLSearchParams(window.location.search);
+                const profissionalId = params.get('id');
+
+                if (!profissionalId) {
+                    exibirErro('ID do profissional não fornecido');
+                    return;
+                }
+
+                const API_URL = 'http://localhost:3000/api';
+
+                const response = await fetch(`${API_URL}/profissionais`);
+                if (!response.ok) {
+                    throw new Error('Erro ao carregar dados');
+                }
+
+                const profissionais = await response.json();
+
+
+                // Encontrar o profissional pelo ID
+                const profissional = profissionais.find(p => p.id === parseInt(profissionalId));
+
+                if (!profissional) {
+                    exibirErro('Profissional não encontrado');
+                    return;
+                }
+
+                // Renderizar os detalhes
+                renderizarProfissional(profissional);
+            } catch (erro) {
+                console.error('Erro ao carregar profissional:', erro);
+                exibirErro('Erro ao carregar os dados do profissional');
+            }
+        }
+
+        /**
+         * Renderiza os detalhes do profissional na página
+         */
+        function renderizarProfissional(profissional) {
+            const conteudo = document.getElementById('conteudo-profissional');
+
+            const html = `
+                <section class="profissional-header">
+                    <div class="profissional-header-content">
+                        <div class="profissional-header-titulo">
+                            <h1>${profissional.nome}</h1>
+                            <p>Especialista em ${profissional.especialidade}</p>
+                        </div>
+                        <button class="btn-voltar-topo" onclick="voltarParaProfissionais()">← Voltar </button>
+                    </div>
+                </section>
+
+                <div class="profissional-container">
+                    <div class="profissional-foto">
+                        <img src="${profissional.foto}" alt="${profissional.nome}" loading="lazy">
+                    </div>
+                    
+                    <div class="profissional-info">
+                        <span class="profissional-badge">${profissional.especialidade}</span>
+
+                        <div class="profissional-detail">
+                            <span class="profissional-detail-label">Especialidade</span>
+                            <span class="profissional-detail-value">${profissional.especialidade}</span>
+                        </div>
+
+                        <div class="profissional-detail">
+                            <span class="profissional-detail-label">Cadastro Profissional</span>
+                            <span class="profissional-detail-value">${profissional.cadastroMedico}</span>
+                        </div>
+
+                        <div class="profissional-detail profissional-apresentacao">
+                            <h3 style="margin-bottom: var(--espaco-md); color: var(--cor-secundaria);">Sobre o Profissional</h3>
+                            <p>${profissional.apresentacao}</p>
+                        </div>
+
+                        <div class="profissional-agendar">
+                            <a href="https://wa.me/5512991806560?text=Olá%20FACCES!%20Gostaria%20de%20agendar%20uma%20consulta%20com%20${profissional.nome.replace(/ /g, '%20')}." 
+                               class="btn btn-primary" 
+                               target="_blank"
+                               style="width: 100%; text-align: center; display: block;">
+                                📱 Agendar Consulta com ${profissional.nome.split(' ')[0]}
+                            </a>
+                        </div>
+
+                        <button class="btn-voltar" onclick="voltarParaProfissionais()">← Voltar</button>
+                    </div>
+                </div>
+            `;
+
+            conteudo.innerHTML = html;
+
+            // Atualizar o título da página
+            document.title = `${profissional.nome} - FACCES Clínica Dentária`;
+        }
+
+        /**
+         * Exibe mensagem de erro
+         */
+        function exibirErro(mensagem) {
+            const conteudo = document.getElementById('conteudo-profissional');
+            conteudo.innerHTML = `
+                <div class="profissional-nao-encontrado">
+                    <h2>⚠️ Erro</h2>
+                    <p>${mensagem}</p>
+                    <button class="btn-voltar" onclick="voltarParaProfissionais()" style="margin-top: var(--espaco-lg);">
+                        ← Voltar aos Profissionais
+                    </button>
+                </div>
+            `;
+        }
+
+        /**
+         * Redireciona para a página principal
+         */
+        function voltarParaProfissionais() {
+            window.location.href = 'index.html#medicos';
+        }
+
+        // Carregar profissional quando a página carrega
+        document.addEventListener('DOMContentLoaded', carregarProfissional);
+    </script>
+</body>
+</html>

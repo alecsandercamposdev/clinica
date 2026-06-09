@@ -1,0 +1,34 @@
+[
+  {
+    "id": 1,
+    "nome": "Dr. João Silva",
+    "especialidade": "Odontologia Geral",
+    "cadastroMedico": "CRO-SP 123456",
+    "foto": "./img/Ricardo.png",
+    "apresentacao": "Dr. João Silva é um profissional dedicado com mais de 15 anos de experiência em odontologia geral. Formado pela Universidade de São Paulo (USP), especializou-se em atendimento preventivo e restaurador. É um apaixonado por oferecer aos pacientes um atendimento de excelência, sempre buscando as melhores técnicas e tecnologias disponíveis no mercado. Dr. Silva acredita que a prevenção é o melhor tratamento e trabalha incansavelmente para educar seus pacientes sobre higiene bucal e cuidados preventivos. Em seu consultório, você encontrará um profissional atento, paciente e comprometido com sua saúde bucal."
+  },
+  {
+    "id": 2,
+    "nome": "Dra. Maria Costa",
+    "especialidade": "Ortodontia",
+    "cadastroMedico": "CRO-SP 234567",
+    "foto": "./img/Maria.png",
+    "apresentacao": "Dra. Maria Costa é uma ortondontista renomada com especialização em ortodontia pela Faculdade de Odontologia da Universidade Estadual de Campinas (Unicamp). Com 12 anos de experiência, ela utiliza técnicas modernas como aparelhos invisíveis (Invisalign), bráquetes autoligáveis e alinhadores digitais. Dra. Costa realiza um atendimento humanizado, escutando as necessidades e anseios de cada paciente. Sua paixão é transformar sorrisos e restaurar a autoconfiança de seus pacientes através de tratamentos ortod6nticos inovadores. Ela está sempre atualizada com as últimas tendências da especialidade."
+  },
+  {
+    "id": 3,
+    "nome": "Dr. Carlos Oliveira",
+    "especialidade": "Implantodontia",
+    "cadastroMedico": "CRO-SP 345678",
+    "foto": "./img/João.png",
+    "apresentacao": "Dr. Carlos Oliveira é um especialista em implantodontia com mais de 18 anos de experiência em reabilitação oral. Possui mestrado pela Universidade Federal de Minas Gerais (UFMG) e está sempre buscando aprimoramento contínuo em técnicas avançadas de implantologia. Realiza cirurgias com precisão milimétrica, utilizando tecnologia de tomografia cone beam e guias cirúrgicas digitais. Dr. Oliveira tem como objetivo restituir a função mastigatória, estética e autoestima aos seus pacientes. Sua dedicação em oferecer os melhores resultados o torna uma referência em implantes dentários na região."
+  },
+  {
+    "id": 4,
+    "nome": "Dra. Ana Santos",
+    "especialidade": "Estética Dentária",
+    "cadastroMedico": "CRO-SP 456789",
+    "foto": "./img/Felipe.png",
+    "apresentacao": "Dra. Ana Santos é uma especialista em estética dentária com formação em Odontologia Estética pela Associação Brasileira de Odontologia (ABO). Com 10 anos de experiência, ela combina arte e ciência para criar sorrisos harmoniosos e naturais. Dra. Santos oferece diversos tratamentos como clareamento avançado, facetas de porcelana, laminados cerâmicos e design de sorriso digital. Seu diferencial é a análise minuciosa de cada caso, considerando características faciais, proporções dentárias e expectativas do paciente. Ela acredita que um sorriso bonito é fundamental para a autoconfiança e qualidade de vida."
+  }
+]

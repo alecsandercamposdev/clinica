@@ -1,0 +1,23 @@
+# FACCES Clínica Dentária - SEO Robots Configuration
+# https://www.robotstxt.org/
+
+User-agent: *
+Allow: /
+Allow: /index.html
+Allow: /profissional.html
+Allow: /style.css
+Allow: /script.js
+Allow: /img/
+
+# Desindexar páginas administrativas
+Disallow: /admin.html
+Disallow: /admin-login.html
+Disallow: /admin.js
+Disallow: /database.js
+Disallow: /server.js
+
+# Crawl-Delay (em segundos)
+Crawl-delay: 1
+
+# Sitemap
+Sitemap: https://seu-site.com/sitemap.xml

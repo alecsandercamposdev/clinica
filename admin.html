@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Painel Administrativo - FACCES Clínica Dentária">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Painel Admin - FACCES</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='75' font-size='75' fill='%23002B2B'>🦷</text></svg>">
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="FACCES Admin">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><text y='135' font-size='135' fill='%23002B2B'>🦷</text></svg>">
+    <style>
+        .admin-container {
+            min-height: 100vh;
+            background: #f5f5f5;
+        }
+
+        .admin-sidebar {
+            background: var(--cor-primaria);
+            color: var(--cor-branco);
+            padding: var(--espaco-lg);
+            position: fixed;
+            left: 0;
+            top: 0;
+            height: 100vh;
+            overflow-y: auto;
+            width: 250px;
+            z-index: 999;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .admin-sidebar h2 {
+            font-size: 1.3rem;
+            margin-bottom: var(--espaco-xl);
+            text-align: center;
+            border-bottom: 2px solid var(--cor-destaque);
+            padding-bottom: var(--espaco-md);
+        }
+
+        .admin-sidebar-menu {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .admin-sidebar-menu li {
+            margin-bottom: var(--espaco-md);
+        }
+
+        .admin-sidebar-menu button {
+            width: 100%;
+            padding: var(--espaco-md);
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--cor-branco);
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 500;
+            transition: all var(--transicao-normal);
+            text-align: left;
+        }
+
+        .admin-sidebar-menu button:hover {
+            background: var(--cor-destaque);
+            transform: translateX(5px);
+        }
+
+        .admin-sidebar-menu button.active {
+            background: var(--cor-destaque);
+            border-left: 4px solid var(--cor-branco);
+        }
+
+        .admin-logout {
+            margin-top: auto;
+            padding-top: var(--espaco-lg);
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            position: sticky;
+            bottom: 0;
+        }
+
+        .admin-logout button {
+            width: 100%;
+            padding: var(--espaco-md);
+            background: var(--cor-erro);
+            color: var(--cor-branco);
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all var(--transicao-normal);
+        }
+
+        .admin-logout button:hover {
+            background: #a01010;
+            transform: translateY(-2px);
+        }
+
+        .admin-main {
+            margin-left: 250px;
+            padding: var(--espaco-xl);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .admin-header {
+            background: var(--cor-branco);
+            padding: var(--espaco-lg);
+            border-radius: 10px;
+            margin-bottom: var(--espaco-xl);
+            box-shadow: var(--sombra-leve);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .admin-header h1 {
+            color: var(--cor-primaria);
+            margin: 0;
+            font-size: 1.8rem;
+        }
+
+        .admin-header-user {
+            text-align: right;
+            color: var(--cor-texto-light);
+        }
+
+        .admin-section {
+            display: none;
+        }
+
+        .admin-section.active {
+            display: block;
+        }
+
+        .admin-content {
+            background: var(--cor-branco);
+            padding: var(--espaco-xl);
+            border-radius: 10px;
+            box-shadow: var(--sombra-leve);
+        }
+
+        .admin-form {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .form-group {
+            margin-bottom: var(--espaco-lg);
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: var(--espaco-sm);
+            color: var(--cor-primaria);
+            font-weight: bold;
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: var(--espaco-md);
+            border: 2px solid var(--cor-borda);
+            border-radius: 5px;
+            font-size: 1rem;
+            font-family: var(--fonte-primaria);
+            box-sizing: border-box;
+            transition: border-color var(--transicao-normal);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 120px;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--cor-destaque);
+            box-shadow: 0 0 5px rgba(38, 166, 154, 0.3);
+        }
+
+        .form-file-input {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .form-file-input input[type=file] {
+            position: absolute;
+            left: -9999px;
+        }
+
+        .form-file-label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: var(--espaco-lg);
+            background: #f0f0f0;
+            border: 2px dashed var(--cor-borda);
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all var(--transicao-normal);
+        }
+
+        .form-file-label:hover {
+            background: #e8f5e9;
+            border-color: var(--cor-destaque);
+        }
+
+        .form-file-preview {
+            margin-top: var(--espaco-md);
+            text-align: center;
+        }
+
+        .form-file-preview img {
+            max-width: 200px;
+            max-height: 200px;
+            border-radius: 10px;
+            box-shadow: var(--sombra-media);
+        }
+
+        .form-buttons {
+            display: flex;
+            gap: var(--espaco-lg);
+            margin-top: var(--espaco-xl);
+        }
+
+        .btn-submit,
+        .btn-cancel {
+            flex: 1;
+            padding: var(--espaco-md);
+            border: none;
+            border-radius: 5px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all var(--transicao-normal);
+        }
+
+        .btn-submit {
+            background: var(--cor-secundaria);
+            color: var(--cor-branco);
+        }
+
+        .btn-submit:hover {
+            background: var(--cor-primaria);
+            transform: translateY(-2px);
+        }
+
+        .btn-cancel {
+            background: var(--cor-borda);
+            color: var(--cor-texto);
+        }
+
+        .btn-cancel:hover {
+            background: #999;
+            color: var(--cor-branco);
+        }
+
+        .profissionais-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: var(--espaco-xl);
+        }
+
+        .profissional-item {
+            background: #f9f9f9;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: var(--sombra-leve);
+            transition: all var(--transicao-normal);
+        }
+
+        .profissional-item:hover {
+            box-shadow: var(--sombra-media);
+            transform: translateY(-5px);
+        }
+
+        .profissional-item-img {
+            width: 100%;
+            height: 250px;
+            background: linear-gradient(135deg, var(--cor-primaria) 0%, var(--cor-secundaria) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 3rem;
+            overflow: hidden;
+        }
+
+        .profissional-item-img img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .profissional-item-info {
+            padding: var(--espaco-lg);
+        }
+
+        .profissional-item-name {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: var(--cor-primaria);
+            margin-bottom: var(--espaco-sm);
+        }
+
+        .profissional-item-specialty {
+            color: var(--cor-secundaria);
+            margin-bottom: var(--espaco-md);
+            font-weight: 500;
+        }
+
+        .profissional-item-cro {
+            color: var(--cor-texto-light);
+            font-size: 0.9rem;
+            margin-bottom: var(--espaco-md);
+        }
+
+        .profissional-item-actions {
+            display: flex;
+            gap: var(--espaco-md);
+        }
+
+        .btn-edit,
+        .btn-delete {
+            flex: 1;
+            padding: var(--espaco-md);
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all var(--transicao-normal);
+        }
+
+        .btn-edit {
+            background: var(--cor-destaque);
+            color: var(--cor-branco);
+        }
+
+        .btn-edit:hover {
+            background: var(--cor-secundaria);
+        }
+
+        .btn-delete {
+            background: var(--cor-erro);
+            color: var(--cor-branco);
+        }
+
+        .btn-delete:hover {
+            background: #a01010;
+        }
+
+        .admin-success {
+            background: #e8f5e9;
+            color: var(--cor-sucesso);
+            padding: var(--espaco-md);
+            border-radius: 5px;
+            margin-bottom: var(--espaco-lg);
+            border-left: 4px solid var(--cor-sucesso);
+            display: none;
+        }
+
+        .admin-success.show {
+            display: block;
+        }
+
+        .admin-empty {
+            text-align: center;
+            padding: var(--espaco-2xl);
+            color: var(--cor-texto-light);
+        }
+
+        .videos-admin-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: var(--espaco-xl);
+            margin-top: var(--espaco-xl);
+        }
+
+        .video-item {
+            background: #f9f9f9;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: var(--sombra-leve);
+            transition: all var(--transicao-normal);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .video-item:hover {
+            box-shadow: var(--sombra-media);
+            transform: translateY(-5px);
+        }
+
+        .video-item-preview {
+            width: 100%;
+            height: 160px;
+            background: linear-gradient(135deg, var(--cor-primaria) 0%, var(--cor-secundaria) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 2.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .video-item-preview.with-image {
+            background: none;
+        }
+
+        .video-item-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .video-item-info {
+            padding: var(--espaco-lg);
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .video-item-title {
+            font-size: 1rem;
+            font-weight: bold;
+            color: var(--cor-primaria);
+            margin-bottom: var(--espaco-sm);
+            word-break: break-word;
+        }
+
+        .video-item-id {
+            font-size: 0.85rem;
+            color: var(--cor-texto-light);
+            margin-bottom: var(--espaco-md);
+            font-family: monospace;
+            word-break: break-all;
+        }
+
+        .video-item-actions {
+            display: flex;
+            gap: var(--espaco-md);
+            margin-top: auto;
+        }
+
+        .btn-video-delete {
+            flex: 1;
+            padding: var(--espaco-md);
+            background: var(--cor-erro);
+            color: var(--cor-branco);
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all var(--transicao-normal);
+        }
+
+        .btn-video-delete:hover {
+            background: #a01010;
+            transform: translateY(-2px);
+        }
+
+        .dashboard-metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: var(--espaco-xl);
+            margin-bottom: var(--espaco-2xl);
+        }
+
+        .metric-card {
+            background: linear-gradient(135deg, var(--cor-primaria) 0%, var(--cor-secundaria) 100%);
+            color: var(--cor-branco);
+            padding: var(--espaco-2xl);
+            border-radius: 10px;
+            box-shadow: var(--sombra-media);
+            text-align: center;
+            transition: all var(--transicao-normal);
+        }
+
+        .metric-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--sombra-forte);
+        }
+
+        .metric-card .metric-icon {
+            font-size: 2.5rem;
+            margin-bottom: var(--espaco-md);
+        }
+
+        .metric-card .metric-label {
+            font-size: 0.95rem;
+            opacity: 0.9;
+            margin-bottom: var(--espaco-sm);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .metric-card .metric-value {
+            font-size: 2rem;
+            font-weight: bold;
+        }
+
+        .metric-card.secondary {
+            background: linear-gradient(135deg, var(--cor-destaque) 0%, #1eb7a8 100%);
+        }
+
+        .metric-card.accent {
+            background: linear-gradient(135deg, #26A69A 0%, #009688 100%);
+        }
+
+        @media (max-width: 768px) {
+            .admin-container {
+                grid-template-columns: 1fr;
+            }
+
+            .admin-sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+                padding-bottom: var(--espaco-xl);
+            }
+
+            .admin-main {
+                margin-left: 0;
+                padding: var(--espaco-lg);
+            }
+
+            .admin-header {
+                flex-direction: column;
+                text-align: center;
+                gap: var(--espaco-lg);
+            }
+
+            .profissionais-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <!-- Sidebar -->
+        <aside class="admin-sidebar">
+            <h2>🦷 FACCES Admin</h2>
+            
+            <ul class="admin-sidebar-menu">
+                <li><button class="menu-btn active" data-section="dashboard">📊 Dashboard</button></li>
+                <li><button class="menu-btn" data-section="profissionais">👥 Profissionais</button></li>
+                <li><button class="menu-btn" data-section="novo">➕ Novo Profissional</button></li>
+                <li><button class="menu-btn" data-section="videos">📹 Gerenciar Vídeos</button></li>
+            </ul>
+
+            <div class="admin-logout">
+                <button onclick="logout()">🔓 Logout</button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="admin-main">
+            <!-- Header -->
+            <div class="admin-header">
+                <h1>Painel Administrativo</h1>
+                <div class="admin-header-user">
+                    <p>👤 <span id="usuarioLogado">admin</span></p>
+                    <p style="font-size: 0.9rem; margin: 0;">Bem-vindo ao painel!</p>
+                </div>
+            </div>
+
+            <!-- Dashboard Section -->
+            <section id="dashboard" class="admin-section active">
+                <div class="admin-content">
+                    <h2>📊 Dashboard</h2>
+                    
+                    <div class="dashboard-metrics">
+                        <div class="metric-card">
+                            <div class="metric-icon">👥</div>
+                            <div class="metric-label">Profissionais</div>
+                            <div class="metric-value" id="totalProfissionais">0</div>
+                        </div>
+                        
+                        <div class="metric-card secondary">
+                            <div class="metric-icon">📊</div>
+                            <div class="metric-label">Acessos ao Site</div>
+                            <div class="metric-value" id="totalAcessos">0</div>
+                        </div>
+                        
+                        <div class="metric-card accent">
+                            <div class="metric-icon">💬</div>
+                            <div class="metric-label">Conversões</div>
+                            <div class="metric-value" id="totalConversoes">0</div>
+                        </div>
+                        
+                        <div class="metric-card" style="background: linear-gradient(135deg, #FF6B6B 0%, #FF8E8E 100%);">
+                            <div class="metric-icon">📈</div>
+                            <div class="metric-label">Taxa Conversão</div>
+                            <div class="metric-value" id="taxaConversao">0%</div>
+                        </div>
+                    </div>
+                    
+                    <hr style="border: none; border-top: 2px solid #eee; margin: var(--espaco-2xl) 0;">
+                    
+                    <p style="margin-top: var(--espaco-lg); color: var(--cor-texto-light); font-size: 0.95rem;">
+                        <strong>📌 Métricas em tempo real:</strong> Esses dados são atualizados conforme visitantes acessam o site e interagem com os CTAs de contato.
+                    </p>
+                </div>
+            </section>
+
+            <!-- Profissionais Section -->
+            <section id="profissionais" class="admin-section">
+                <div class="admin-content">
+                    <h2>👥 Gerenciar Profissionais</h2>
+                    <div id="profissionaisList" class="profissionais-grid">
+                        <!-- Preenchido por JavaScript -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Novo Profissional Section -->
+            <section id="novo" class="admin-section">
+                <div class="admin-content">
+                    <h2>➕ Novo Profissional</h2>
+                    
+                    <div id="successMsg" class="admin-success"></div>
+
+                    <form id="profissionalForm" class="admin-form">
+                        <div class="form-group">
+                            <label for="foto">📷 Foto de Perfil</label>
+                            <div class="form-file-input">
+                                <input type="file" id="foto" accept="image/*" required>
+                                <label for="foto" class="form-file-label">
+                                    Clique para selecionar uma imagem
+                                </label>
+                            </div>
+                            <div id="fotoPreview" class="form-file-preview"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="nome">Nome</label>
+                            <input type="text" id="nome" placeholder="Ex: Dr. João Silva" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="especialidade">Especialidade</label>
+                            <input type="text" id="especialidade" placeholder="Ex: Odontologia Geral" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="cadastro">Cadastro Profissional</label>
+                            <input type="text" id="cadastro" placeholder="Ex: CRO-SP 123456" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="apresentacao">Apresentação/Biografia</label>
+                            <textarea id="apresentacao" placeholder="Conte sobre o profissional, experiência, especialização, etc..." required></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="atuacao">Áreas de Atuação</label>
+                            <textarea id="atuacao" placeholder="Descreva as principais áreas de atuação do profissional..." required></textarea>
+                        </div>
+
+                        <div class="form-buttons">
+                            <button type="submit" class="btn-submit">💾 Salvar Profissional</button>
+                            <button type="reset" class="btn-cancel">🗑️ Limpar</button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <!-- Editar Profissional Section -->
+            <section id="editar" class="admin-section">
+                <div class="admin-content">
+                    <h2>✏️ Editar Profissional</h2>
+                    
+                    <div id="editSuccessMsg" class="admin-success"></div>
+
+                    <form id="profissionalEditForm" class="admin-form">
+                        <div class="form-group">
+                            <label for="editFoto">📷 Foto de Perfil</label>
+                            <div class="form-file-input">
+                                <input type="file" id="editFoto" accept="image/*">
+                                <label for="editFoto" class="form-file-label">
+                                    Clique para selecionar uma nova imagem
+                                </label>
+                            </div>
+                            <div id="editFotoPreview" class="form-file-preview"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="editNome">Nome</label>
+                            <input type="text" id="editNome" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="editEspecialidade">Especialidade</label>
+                            <input type="text" id="editEspecialidade" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="editCadastro">Cadastro Profissional</label>
+                            <input type="text" id="editCadastro" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="editApresentacao">Apresentação/Biografia</label>
+                            <textarea id="editApresentacao" required></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="editAtuacao">Áreas de Atuação</label>
+                            <textarea id="editAtuacao" required></textarea>
+                        </div>
+
+                        <div class="form-buttons">
+                            <button type="submit" class="btn-submit">💾 Atualizar Profissional</button>
+                            <button type="button" onclick="cancelarEdicao()" class="btn-cancel">❌ Cancelar</button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <!-- Gerenciar Vídeos Section -->
+            <section id="videos" class="admin-section">
+                <div class="admin-content">
+                    <h2>📹 Gerenciar Vídeos Educativos</h2>
+                    
+                    <div id="videoSuccessMsg" class="admin-success"></div>
+
+                    <div style="margin-bottom: var(--espaco-xl); padding: var(--espaco-lg); background: #f0f0f0; border-radius: 5px;">
+                        <p style="margin-bottom: var(--espaco-md); color: var(--cor-primaria); font-weight: bold;">ℹ️ Como adicionar um vídeo do YouTube:</p>
+                        <ol style="color: var(--cor-texto-light); line-height: 1.8;">
+                            <li>Acesse um vídeo no YouTube</li>
+                            <li>Copie a URL do vídeo (ex: https://www.youtube.com/watch?v=abc123xyz)</li>
+                            <li>Extraia o ID (abc123xyz) - é a parte após "v="</li>
+                            <li>Cole o ID abaixo (sem a URL completa)</li>
+                        </ol>
+                    </div>
+
+                    <form id="videoForm" class="admin-form">
+                        <div class="form-group">
+                            <label for="videoTitulo">Título do Vídeo</label>
+                            <input type="text" id="videoTitulo" placeholder="Ex: Como escovar os dentes corretamente" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="videoDescricao">Descrição (Opcional)</label>
+                            <textarea id="videoDescricao" placeholder="Descreva brevemente o conteúdo do vídeo..." style="min-height: 80px;"></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="videoID">ID do Vídeo YouTube</label>
+                            <input type="text" id="videoID" placeholder="Ex: dQw4w9WgXcQ" required>
+                            <p style="font-size: 0.85rem; color: var(--cor-texto-light); margin-top: 0.5rem;">
+                                Apenas o ID, não a URL completa
+                            </p>
+                        </div>
+
+                        <div class="form-buttons">
+                            <button type="submit" class="btn-submit">➕ Adicionar Vídeo</button>
+                            <button type="reset" class="btn-cancel">🗑️ Limpar</button>
+                        </div>
+                    </form>
+
+                    <hr style="margin: var(--espaco-2xl) 0; border: none; border-top: 2px solid #eee;">
+
+                    <h3 style="margin-top: var(--espaco-xl); color: var(--cor-primaria);">Vídeos Cadastrados</h3>
+                    <div id="videosList" class="videos-admin-grid">
+                        <!-- Preenchido por JavaScript -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Editar Vídeo Section -->
+            <section id="editar-video" class="admin-section">
+                <div class="admin-content">
+                    <h2>✏️ Editar Vídeo</h2>
+                    
+                    <div id="editVideoSuccessMsg" class="admin-success"></div>
+
+                    <form id="videoEditForm" class="admin-form">
+                        <div class="form-group">
+                            <label for="editVideoTitulo">Título do Vídeo</label>
+                            <input type="text" id="editVideoTitulo" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="editVideoDescricao">Descrição (Opcional)</label>
+                            <textarea id="editVideoDescricao" style="min-height: 80px;"></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="editVideoID">ID do Vídeo YouTube</label>
+                            <input type="text" id="editVideoID" required>
+                            <p style="font-size: 0.85rem; color: var(--cor-texto-light); margin-top: 0.5rem;">
+                                Apenas o ID, não a URL completa
+                            </p>
+                        </div>
+
+                        <div class="form-buttons">
+                            <button type="submit" class="btn-submit">💾 Atualizar Vídeo</button>
+                            <button type="button" onclick="cancelarEdicaoVideo()" class="btn-cancel">❌ Cancelar</button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="admin.js"></script>
+</body>
+</html>

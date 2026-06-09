@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Login - Painel Administrativo FACCES">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Login - Painel Admin FACCES</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='75' font-size='75' fill='%23002B2B'>🦷</text></svg>">
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="FACCES Admin">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><text y='135' font-size='135' fill='%23002B2B'>🦷</text></svg>">
+    <style>
+        .admin-login-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, var(--cor-primaria) 0%, var(--cor-secundaria) 100%);
+            padding: var(--espaco-lg);
+        }
+
+        .admin-login-card {
+            background: var(--cor-branco);
+            padding: var(--espaco-2xl);
+            border-radius: 10px;
+            box-shadow: var(--sombra-forte);
+            max-width: 400px;
+            width: 100%;
+        }
+
+        .admin-login-card h1 {
+            color: var(--cor-primaria);
+            text-align: center;
+            margin-bottom: var(--espaco-lg);
+            font-size: 1.8rem;
+        }
+
+        .admin-login-card p {
+            text-align: center;
+            color: var(--cor-texto-light);
+            margin-bottom: var(--espaco-2xl);
+        }
+
+        .form-group {
+            margin-bottom: var(--espaco-lg);
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: var(--espaco-sm);
+            color: var(--cor-primaria);
+            font-weight: bold;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: var(--espaco-sm);
+            border: 2px solid var(--cor-borda);
+            border-radius: 5px;
+            font-size: 1rem;
+            font-family: var(--fonte-primaria);
+            transition: border-color var(--transicao-normal);
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--cor-destaque);
+            box-shadow: 0 0 5px rgba(38, 166, 154, 0.3);
+        }
+
+        .admin-login-btn {
+            width: 100%;
+            padding: var(--espaco-md);
+            background: linear-gradient(135deg, var(--cor-primaria) 0%, var(--cor-secundaria) 100%);
+            color: var(--cor-branco);
+            border: none;
+            border-radius: 5px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all var(--transicao-normal);
+        }
+
+        .admin-login-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .admin-login-btn:active {
+            transform: translateY(-1px);
+        }
+
+        .admin-login-error {
+            background: #ffebee;
+            color: var(--cor-erro);
+            padding: var(--espaco-md);
+            border-radius: 5px;
+            margin-bottom: var(--espaco-lg);
+            display: none;
+            text-align: center;
+            border-left: 4px solid var(--cor-erro);
+        }
+
+        .admin-login-error.show {
+            display: block;
+        }
+
+        .admin-login-footer {
+            text-align: center;
+            margin-top: var(--espaco-lg);
+            color: var(--cor-texto-light);
+            font-size: 0.9rem;
+        }
+
+        .admin-login-footer a {
+            color: var(--cor-destaque);
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .admin-login-footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-login-container">
+        <div class="admin-login-card">
+            <h1>🔐 FACCES Admin</h1>
+            <p>Painel Administrativo - Login</p>
+
+            <div class="admin-login-error" id="errorMsg"></div>
+
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="usuario">Usuário</label>
+                    <input 
+                        type="text" 
+                        id="usuario" 
+                        placeholder="Digite seu usuário" 
+                        required 
+                        autocomplete="username"
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="senha">Senha</label>
+                    <input 
+                        type="password" 
+                        id="senha" 
+                        placeholder="Digite sua senha" 
+                        required 
+                        autocomplete="current-password"
+                    >
+                </div>
+
+                <button type="submit" class="admin-login-btn">Entrar</button>
+            </form>
+
+
+        </div>
+    </div>
+
+    <script>
+        /**
+         * Autenticação simples no login
+         */
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const usuario = document.getElementById('usuario').value;
+            const senha = document.getElementById('senha').value;
+            const errorMsg = document.getElementById('errorMsg');
+
+            // Credenciais padrão (em produção, fazer com backend)
+            const usuarioCorreto = 'admin';
+            const senhaCorreto = 'admin123';
+
+            if (usuario === usuarioCorreto && senha === senhaCorreto) {
+                // Salvar autenticação no localStorage
+                localStorage.setItem('adminAutenticado', 'true');
+                localStorage.setItem('adminUsuario', usuario);
+                
+                // Redirecionar para o painel admin
+                window.location.href = 'admin.html';
+            } else {
+                errorMsg.textContent = '❌ Usuário ou senha incorretos!';
+                errorMsg.classList.add('show');
+                
+                // Limpar campos
+                document.getElementById('usuario').value = '';
+                document.getElementById('senha').value = '';
+                
+                // Remover mensagem após 5 segundos
+                setTimeout(() => {
+                    errorMsg.classList.remove('show');
+                }, 5000);
+            }
+        });
+
+        // Se já está autenticado, redirecionar
+        if (localStorage.getItem('adminAutenticado') === 'true') {
+            window.location.href = 'admin.html';
+        }
+    </script>
+</body>
+</html>

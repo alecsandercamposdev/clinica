@@ -1,0 +1,61 @@
+{
+  "name": "FACCES Clínica Dentária",
+  "short_name": "FACCES",
+  "description": "Clínica Dentária Especializada em Saúde Bucal em Guaratinguetá-SP. Odontologia Geral, Ortodontia, Estética e Implantes Dentários.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FFFFFF",
+  "theme_color": "#002B2B",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><text y='144' font-size='144' fill='%23002B2B'>🦷</text></svg>",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><text y='384' font-size='384' fill='%23002B2B'>🦷</text></svg>",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 540 720'><rect fill='%23002B2B' width='540' height='720'/><text x='270' y='360' font-size='80' fill='%23FFF' text-anchor='middle'>FACCES</text></svg>",
+      "sizes": "540x720",
+      "type": "image/svg+xml"
+    }
+  ],
+  "categories": ["medical", "health"],
+  "shortcuts": [
+    {
+      "name": "Agendar Consulta",
+      "short_name": "Agendar",
+      "description": "Agende sua consulta via WhatsApp",
+      "url": "/?utm_source=pwa#contato",
+      "icons": [
+        {
+          "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'><text y='72' font-size='72' fill='%2325D366'>📞</text></svg>",
+          "sizes": "96x96",
+          "type": "image/svg+xml"
+        }
+      ]
+    },
+    {
+      "name": "Nossos Profissionais",
+      "short_name": "Profissionais",
+      "description": "Conheça nossos profissionais qualificados",
+      "url": "/?utm_source=pwa#medicos",
+      "icons": [
+        {
+          "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'><text y='72' font-size='72' fill='%23002B2B'>👥</text></svg>",
+          "sizes": "96x96",
+          "type": "image/svg+xml"
+        }
+      ]
+    }
+  ]
+}
