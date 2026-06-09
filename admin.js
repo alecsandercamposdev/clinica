@@ -386,7 +386,7 @@ async function listarVideos() {
             </div>
             <div class="video-item-info">
                 <div class="video-item-title">${video.titulo}</div>
-                <div class="video-item-id">ID: ${video.youtubeId}</div>
+                <div class="video-item-id">ID: ${video.youtubeid}</div>
                 ${video.descricao ? `<p style="font-size: 0.9rem; color: var(--cor-texto-light); margin-bottom: var(--espaco-md);">${video.descricao}</p>` : ''}
                 <div class="video-item-actions" style="display: flex; gap: var(--espaco-md);">
                     <button class="btn-edit" onclick="editarVideo(${video.id})" style="flex: 1; padding: var(--espaco-md); background: var(--cor-destaque); color: var(--cor-branco); border: none; border-radius: 5px; cursor: pointer; font-weight: bold; transition: all var(--transicao-normal);">✏️ Editar</button>
@@ -406,7 +406,7 @@ document.getElementById('videoForm')?.addEventListener('submit', async function(
     const novoVideo = {
         titulo: document.getElementById('videoTitulo').value,
         descricao: document.getElementById('videoDescricao').value,
-        youtubeId: document.getElementById('videoID').value
+        youtubeid: document.getElementById('videoID').value
     };
     
     try {
@@ -452,7 +452,7 @@ async function editarVideo(id) {
     // Preencher formulário de edição
     document.getElementById('editVideoTitulo').value = video.titulo;
     document.getElementById('editVideoDescricao').value = video.descricao || '';
-    document.getElementById('editVideoID').value = video.youtubeId;
+    document.getElementById('editVideoID').value = video.youtubeid;
     
     // Mudar para seção de edição
     mostrarSecao('editar-video');
@@ -479,7 +479,7 @@ document.getElementById('videoEditForm')?.addEventListener('submit', async funct
     const videoAtualizado = {
         titulo: document.getElementById('editVideoTitulo').value,
         descricao: document.getElementById('editVideoDescricao').value,
-        youtubeId: document.getElementById('editVideoID').value
+        youtubeid: document.getElementById('editVideoID').value
     };
 
     try {
