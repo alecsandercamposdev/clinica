@@ -4,7 +4,7 @@
  * Navegação suave, menu responsivo e validação de formulário
  */
 
-const API_URL = 'http://localhost:3000/api';
+const API_URL = '/api';
 
 // ================================================
 // FUNCIONALIDADES DE NAVEGAÇÃO
@@ -247,7 +247,7 @@ async function atualizarVideosEducativos() {
         if (!videosGrid) return;
         
         // Carregar vídeos da API
-        const response = await fetch('http://localhost:3000/api/videos');
+        const response = await fetch('/api/videos');
         if (!response.ok) throw new Error('Erro ao carregar vídeos');
         
         const videos = await response.json();
