@@ -1,20 +1,28 @@
 /**
- * Configuração e inicialização do banco de dados SQLite
+ * Configuração e inicialização do banco de dados PostgreSQL
  * FACCES - Clínica Dentária
  */
 
-const sqlite3 = require('sqlite3').verbose();
-const path = require('path');
+const { Pool } = require('pg');
 
-// Caminho do banco de dados
-const dbPath = path.join(__dirname, 'facces.db');
+// A Render vai injetar a string de conexão na variável de ambiente DATABASE_URL
+const connectionString = process.env.DATABASE_URL;
 
-// Criar conexão com banco de dados
-const db = new sqlite3.Database(dbPath, (err) => {
+// Criar conexão com o banco de dados PostgreSQL
+const db = new Pool({
+    connectionString: connectionString,
+    ssl: {
+        rejectUnauthorized: false // Obrigatório para conexões seguras na Render
+    }
+});
+
+// Testar a conexão inicial
+db.connect((err, client, release) => {
     if (err) {
-        console.error('❌ Erro ao conectar ao banco de dados:', err);
+        console.error('❌ Erro ao conectar ao banco de dados PostgreSQL:', err.stack);
     } else {
-        console.log('✅ Conectado ao banco de dados SQLite: facces.db');
+        console.log('✅ Conectado ao banco de dados PostgreSQL na Render!');
+        release();
         inicializarBancoDados();
     }
 });
@@ -22,55 +30,64 @@ const db = new sqlite3.Database(dbPath, (err) => {
 /**
  * Inicializar estrutura do banco de dados
  */
-function inicializarBancoDados() {
-    // Criar tabela de profissionais
-    db.run(`
-        CREATE TABLE IF NOT EXISTS profissionais (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            nome TEXT NOT NULL,
-            especialidade TEXT NOT NULL,
-            cadastroMedico TEXT NOT NULL,
-            apresentacao TEXT,
-            atuacao TEXT,
-            foto LONGTEXT,
-            criadoEm DATETIME DEFAULT CURRENT_TIMESTAMP,
-            atualizadoEm DATETIME DEFAULT CURRENT_TIMESTAMP
-        )
-    `, (err) => {
-        if (err) console.error('Erro ao criar tabela profissionais:', err);
-        else console.log('✅ Tabela profissionais pronta');
-    });
+async function inicializarBancoDados() {
+    try {
+        // Criar tabela de profissionais
+        await db.query(`
+            CREATE TABLE IF NOT EXISTS profissionais (
+                id SERIAL PRIMARY KEY,
+                nome TEXT NOT NULL,
+                especialidade TEXT NOT NULL,
+                cadastroMedico TEXT NOT NULL,
+                apresentacao TEXT,
+                atuacao TEXT,
+                foto TEXT,
+                criadoEm TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                atualizadoEm TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+        console.log('✅ Tabela profissionais pronta');
 
-    // Criar tabela de vídeos
-    db.run(`
-        CREATE TABLE IF NOT EXISTS videos (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            titulo TEXT NOT NULL,
-            descricao TEXT,
-            youtubeId TEXT NOT NULL UNIQUE,
-            criadoEm DATETIME DEFAULT CURRENT_TIMESTAMP,
-            atualizadoEm DATETIME DEFAULT CURRENT_TIMESTAMP
-        )
-    `, (err) => {
-        if (err) console.error('Erro ao criar tabela videos:', err);
-        else console.log('✅ Tabela videos pronta');
-    });
+        // Criar tabela de vídeos
+        await db.query(`
+            CREATE TABLE IF NOT EXISTS videos (
+                id SERIAL PRIMARY KEY,
+                titulo TEXT NOT NULL,
+                descricao TEXT,
+                youtubeId TEXT NOT NULL UNIQUE,
+                criadoEm TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                atualizadoEm TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+        console.log('✅ Tabela videos pronta');
 
-    // Criar tabela de métricas
-    db.run(`
-        CREATE TABLE IF NOT EXISTS metricas (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            data DATE DEFAULT CURRENT_DATE,
-            acessos INTEGER DEFAULT 0,
-            conversoes INTEGER DEFAULT 0,
-            conversoesPorTipo TEXT DEFAULT '{}',
-            atualizadoEm DATETIME DEFAULT CURRENT_TIMESTAMP,
-            UNIQUE(data)
-        )
-    `, (err) => {
-        if (err) console.error('Erro ao criar tabela metricas:', err);
-        else console.log('✅ Tabela metricas pronta');
-    });
+        // Criar tabela de métricas
+        await db.query(`
+            CREATE TABLE IF NOT EXISTS metricas (
+                id SERIAL PRIMARY KEY,
+                data DATE DEFAULT CURRENT_DATE UNIQUE,
+                acessos INTEGER DEFAULT 0,
+                conversoes INTEGER DEFAULT 0,
+                conversoesPorTipo TEXT DEFAULT '{}',
+                atualizadoEm TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+        console.log('✅ Tabela metricas pronta');
+
+    } catch (err) {
+        console.error('❌ Erro ao inicializar tabelas:', err);
+    }
 }
+
+// Casca de compatibilidade para não quebrar o seu server.js antigo
+db.run = function(query, params, callback) {
+    if (typeof params === 'function') {
+        callback = params;
+        params = [];
+    }
+    this.query(query.replace(/\?/g, (match, index) => `$${index + 1}`), params)
+        .then(res => callback && callback(null, res))
+        .catch(err => callback && callback(err));
+};
 
 module.exports = db;
