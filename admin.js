@@ -276,7 +276,7 @@ document.getElementById('profissionalEditForm')?.addEventListener('submit', asyn
 const profissionalAtualizado = {
         nome: document.getElementById('editNome').value,
         especialidade: document.getElementById('editEspecialidade').value,
-        cadastromedico: document.getElementById('editCadastro').value, 
+        cadastroMedico: document.getElementById('editCadastro').value,
         apresentacao: document.getElementById('editApresentacao').value,
         atuacao: document.getElementById('editAtuacao').value,
         foto: fotoAtualizada ? fotoAtualizada : fotoOriginalProfissional
