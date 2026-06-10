@@ -184,16 +184,19 @@ app.get('/api/videos', (req, res) => {
 });
 
 app.post('/api/videos', (req, res) => {
-    const { titulo, descricao, youtubeId } = req.body;
+    const { titulo, descricao, youtubeid } = req.body; // 👈 Alterado para youtubeid
 
-    if (!titulo || !youtubeId) {
+    if (!titulo || !youtubeid) {
         return res.status(400).json({ erro: 'Título e ID do YouTube são obrigatórios' });
     }
 
     const sql = `
-        INSERT INTO videos (titulo, descricao, youtubeId)
+        INSERT INTO videos (titulo, descricao, youtubeid) // 👈 Alterado para youtubeid
         VALUES ($1, $2, $3) RETURNING id
     `;
+
+    db.query(sql, [titulo, descricao || '', youtubeid]) // 👈 Alterado para youtubeid
+
 
     db.query(sql, [titulo, descricao || '', youtubeId])
         .then(result => {
@@ -213,19 +216,20 @@ app.post('/api/videos', (req, res) => {
 
 app.put('/api/videos/:id', (req, res) => {
     const { id } = req.params;
-    const { titulo, descricao, youtubeId } = req.body;
+    const { titulo, descricao, youtubeid } = req.body; // 👈 Alterado para youtubeid
 
-    if (!titulo || !youtubeId) {
+    if (!titulo || !youtubeid) {
         return res.status(400).json({ erro: 'Título e YouTube ID são obrigatórios' });
     }
 
     const sql = `
         UPDATE videos
-        SET titulo = $1, descricao = $2, youtubeId = $3, atualizadoEm = CURRENT_TIMESTAMP
+        SET titulo = $1, descricao = $2, youtubeid = $3, atualizadoEm = CURRENT_TIMESTAMP // 👈 Alterado para youtubeid
         WHERE id = $4 RETURNING *
     `;
 
-    db.query(sql, [titulo, descricao || '', youtubeId, id])
+    db.query(sql, [titulo, descricao || '', youtubeid, id]) // 👈 Alterado para youtubeid
+...
         .then(result => {
             if (result.rowCount === 0) return res.status(404).json({ erro: 'Vídeo não encontrado' });
             res.json({ mensagem: '✅ Vídeo atualizado com sucesso' });
