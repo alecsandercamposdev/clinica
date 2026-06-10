@@ -229,7 +229,7 @@ app.put('/api/videos/:id', (req, res) => {
     `;
 
     db.query(sql, [titulo, descricao || '', youtubeid, id]) // 👈 Alterado para youtubeid
-...
+
         .then(result => {
             if (result.rowCount === 0) return res.status(404).json({ erro: 'Vídeo não encontrado' });
             res.json({ mensagem: '✅ Vídeo atualizado com sucesso' });
