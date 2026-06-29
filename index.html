@@ -306,27 +306,16 @@
         </div>
     </footer>
 
+    <script src="utils.js"></script>
     <script src="script.js"></script>
     <script>
         (function () {
-            const API_URL = '/api';
-
-            async function carregarProfissionais() {
-                const res = await fetch(`${API_URL}/profissionais`);
-                if (!res.ok) throw new Error('Erro ao carregar profissionais');
-                return res.json();
-            }
-
             function renderizarProfissionais(profissionais) {
                 const grid = document.getElementById('medicosGrid');
                 if (!grid) return;
 
                 if (!profissionais || profissionais.length === 0) {
-                    grid.innerHTML = `
-                        <div class="admin-empty" style="grid-column: 1/-1;">
-                            <p>📭 Nenhum profissional cadastrado ainda.</p>
-                        </div>
-                    `;
+                    grid.innerHTML = renderizarVazio('Nenhum profissional cadastrado ainda.');
                     return;
                 }
 
@@ -347,23 +336,15 @@
             document.addEventListener('DOMContentLoaded', async function () {
                 const grid = document.getElementById('medicosGrid');
                 if (grid) {
-                    grid.innerHTML = `
-                        <div class="admin-empty" style="grid-column: 1/-1;">
-                            <p>Carregando profissionais...</p>
-                        </div>
-                    `;
+                    grid.innerHTML = renderizarVazio('Carregando profissionais...');
                 }
 
                 try {
-                    const profissionais = await carregarProfissionais();
+                    const profissionais = await fetchApi('/profissionais');
                     renderizarProfissionais(profissionais);
                 } catch (e) {
                     if (!grid) return;
-                    grid.innerHTML = `
-                        <div class="admin-empty" style="grid-column: 1/-1;">
-                            <p>❌ Erro ao carregar profissionais. Tente recarregar a página.</p>
-                        </div>
-                    `;
+                    grid.innerHTML = renderizarVazio('Erro ao carregar profissionais. Tente recarregar a página.');
                 }
             });
         })();

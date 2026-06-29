@@ -79,15 +79,37 @@ async function inicializarBancoDados() {
     }
 }
 
-// Casca de compatibilidade para não quebrar o seu server.js antigo
+// ================================================
+// CAMADA DE COMPATIBILIDADE SQLITE → POSTGRESQL
+// ================================================
+
+function replaceParams(query) {
+    let i = 0;
+    return query.replace(/\?/g, () => `$${++i}`);
+}
+
 db.run = function(query, params, callback) {
     if (typeof params === 'function') {
         callback = params;
         params = [];
     }
-    this.query(query.replace(/\?/g, (match, index) => `$${index + 1}`), params)
+    this.query(replaceParams(query), params)
         .then(res => callback && callback(null, res))
         .catch(err => callback && callback(err));
+};
+
+db.all = function(query, params, callback) {
+    if (typeof params === 'function') { callback = params; params = []; }
+    this.query(replaceParams(query), params)
+        .then(res => callback(null, res.rows))
+        .catch(err => callback(err));
+};
+
+db.get = function(query, params, callback) {
+    if (typeof params === 'function') { callback = params; params = []; }
+    this.query(replaceParams(query), params)
+        .then(res => callback(null, res.rows[0] || null))
+        .catch(err => callback(err));
 };
 
 module.exports = db;
