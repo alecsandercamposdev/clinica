@@ -7,6 +7,8 @@
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 const path = require('path');
 const fs = require('fs');
 const db = require('./database');
@@ -15,6 +17,12 @@ const app = express();
 
 // A Render define a porta automaticamente pela variável de ambiente PORT. Se não houver, usa 3000.
 const PORT = process.env.PORT || 3000;
+
+// ================================================
+// CREDENCIAIS DO ADMIN (via variáveis de ambiente)
+// ================================================
+const ADMIN_USER = process.env.ADMIN_USER || 'admin';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
 
 // ================================================
 // CAMADA DE COMPATIBILIDADE POSTGRESQL (Para manter suas rotas funcionando)
@@ -33,13 +41,78 @@ db.get = function(query, params, callback) {
         .catch(err => callback(err));
 };
 
-// Middleware
-app.use(cors());
-app.use(bodyParser.json({ limit: '50mb' }));
-app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
+// ================================================
+// SECURITY MIDDLEWARE
+// ================================================
 
-// Servir arquivos estáticos (HTML, CSS, JS, imagens)
-app.use(express.static(path.join(__dirname)));
+// Security headers
+app.use(helmet({
+    contentSecurityPolicy: false, // Disabled for inline scripts in HTML pages
+    crossOriginEmbedderPolicy: false // Allow YouTube embeds
+}));
+
+// Rate limiting - general
+const generalLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // limit each IP to 100 requests per windowMs
+    message: { erro: 'Muitas requisições. Tente novamente em 15 minutos.' }
+});
+
+// Rate limiting - stricter for auth
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 10, // limit login attempts
+    message: { erro: 'Muitas tentativas de login. Tente novamente em 15 minutos.' }
+});
+
+// Rate limiting - stricter for write operations
+const writeLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 30,
+    message: { erro: 'Muitas operações de escrita. Tente novamente em 15 minutos.' }
+});
+
+app.use('/api/', generalLimiter);
+
+// CORS - restrict to allowed origins
+const allowedOrigins = process.env.CORS_ORIGINS
+    ? process.env.CORS_ORIGINS.split(',')
+    : undefined; // undefined allows same-origin only in production
+
+app.use(cors({
+    origin: allowedOrigins || true, // true = reflect request origin (for dev); set CORS_ORIGINS in production
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
+// Body parser with reasonable limits
+app.use(bodyParser.json({ limit: '5mb' }));
+app.use(bodyParser.urlencoded({ limit: '5mb', extended: true }));
+
+// Servir arquivos estáticos from a safe directory (only public assets)
+const publicDir = path.join(__dirname, 'public');
+if (!fs.existsSync(publicDir)) {
+    fs.mkdirSync(publicDir);
+}
+app.use(express.static(publicDir));
+
+// Serve specific allowed files from root (HTML, CSS, JS for frontend)
+const allowedStaticFiles = [
+    'index.html', 'admin.html', 'admin-login.html', 'profissional.html',
+    'style.css', 'script.js', 'admin.js', 'manifest.json',
+    'robots.txt', 'sitemap.xml'
+];
+allowedStaticFiles.forEach(file => {
+    const filePath = path.join(__dirname, file);
+    if (fs.existsSync(filePath)) {
+        app.get(`/${file}`, (req, res) => {
+            res.sendFile(filePath);
+        });
+    }
+});
+
+// Serve images directory
+app.use('/img', express.static(path.join(__dirname, 'img')));
 
 // Rota raiz para servir index.html
 app.get('/', (req, res) => {
@@ -47,10 +120,102 @@ app.get('/', (req, res) => {
 });
 
 // ================================================
+// AUTHENTICATION MIDDLEWARE
+// ================================================
+
+/**
+ * Server-side authentication via Basic Auth or Bearer token (session-based).
+ * Protects admin write operations.
+ */
+const activeSessions = new Map(); // token -> { user, expiresAt }
+
+function generateToken() {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let token = '';
+    for (let i = 0; i < 64; i++) {
+        token += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return token;
+}
+
+function requireAuth(req, res, next) {
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader) {
+        return res.status(401).json({ erro: 'Autenticação necessária' });
+    }
+
+    // Support Bearer token
+    if (authHeader.startsWith('Bearer ')) {
+        const token = authHeader.slice(7);
+        const session = activeSessions.get(token);
+
+        if (!session || session.expiresAt < Date.now()) {
+            activeSessions.delete(token);
+            return res.status(401).json({ erro: 'Sessão expirada. Faça login novamente.' });
+        }
+
+        req.adminUser = session.user;
+        return next();
+    }
+
+    return res.status(401).json({ erro: 'Formato de autenticação inválido' });
+}
+
+// Login endpoint
+app.post('/api/auth/login', authLimiter, (req, res) => {
+    const { usuario, senha } = req.body;
+
+    if (!usuario || !senha) {
+        return res.status(400).json({ erro: 'Usuário e senha são obrigatórios' });
+    }
+
+    if (usuario === ADMIN_USER && senha === ADMIN_PASSWORD) {
+        const token = generateToken();
+        const expiresAt = Date.now() + (8 * 60 * 60 * 1000); // 8 hours
+
+        activeSessions.set(token, { user: usuario, expiresAt });
+
+        return res.json({
+            mensagem: 'Login realizado com sucesso',
+            token,
+            expiresAt
+        });
+    }
+
+    return res.status(401).json({ erro: 'Usuário ou senha incorretos' });
+});
+
+// Logout endpoint
+app.post('/api/auth/logout', (req, res) => {
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+        const token = authHeader.slice(7);
+        activeSessions.delete(token);
+    }
+    res.json({ mensagem: 'Logout realizado com sucesso' });
+});
+
+// Verify session endpoint
+app.get('/api/auth/verify', (req, res) => {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).json({ valido: false });
+    }
+    const token = authHeader.slice(7);
+    const session = activeSessions.get(token);
+    if (!session || session.expiresAt < Date.now()) {
+        activeSessions.delete(token);
+        return res.status(401).json({ valido: false });
+    }
+    res.json({ valido: true, usuario: session.user });
+});
+
+// ================================================
 // ROTA DE IMPORTAÇÃO DE DADOS
 // ================================================
 
-app.post('/api/importar-profissionais', (req, res) => {
+app.post('/api/importar-profissionais', requireAuth, writeLimiter, (req, res) => {
     const jsonPath = path.join(__dirname, 'profissionais.json');
     
     if (!fs.existsSync(jsonPath)) {
@@ -121,11 +286,22 @@ app.get('/api/profissionais/:id', (req, res) => {
     });
 });
 
-app.post('/api/profissionais', (req, res) => {
+app.post('/api/profissionais', requireAuth, writeLimiter, (req, res) => {
     const { nome, especialidade, cadastroMedico, apresentacao, atuacao, foto } = req.body;
     
     if (!nome || !especialidade || !cadastroMedico) {
         return res.status(400).json({ erro: 'Dados obrigatórios faltando' });
+    }
+
+    // Input validation
+    if (typeof nome !== 'string' || nome.length > 200) {
+        return res.status(400).json({ erro: 'Nome inválido (máx. 200 caracteres)' });
+    }
+    if (typeof especialidade !== 'string' || especialidade.length > 200) {
+        return res.status(400).json({ erro: 'Especialidade inválida (máx. 200 caracteres)' });
+    }
+    if (typeof cadastroMedico !== 'string' || cadastroMedico.length > 50) {
+        return res.status(400).json({ erro: 'Cadastro médico inválido (máx. 50 caracteres)' });
     }
 
     const sql = `
@@ -143,7 +319,7 @@ app.post('/api/profissionais', (req, res) => {
         .catch(err => res.status(500).json({ erro: err.message }));
 });
 
-app.put('/api/profissionais/:id', (req, res) => {
+app.put('/api/profissionais/:id', requireAuth, writeLimiter, (req, res) => {
     const { id } = req.params;
     const { nome, especialidade, cadastroMedico, apresentacao, atuacao, foto } = req.body;
 
@@ -161,7 +337,7 @@ app.put('/api/profissionais/:id', (req, res) => {
         .catch(err => res.status(500).json({ erro: err.message }));
 });
 
-app.delete('/api/profissionais/:id', (req, res) => {
+app.delete('/api/profissionais/:id', requireAuth, writeLimiter, (req, res) => {
     const { id } = req.params;
 
     db.query('DELETE FROM profissionais WHERE id = $1 RETURNING *', [id])
@@ -183,11 +359,19 @@ app.get('/api/videos', (req, res) => {
     });
 });
 
-app.post('/api/videos', (req, res) => {
+app.post('/api/videos', requireAuth, writeLimiter, (req, res) => {
     const { titulo, descricao, youtubeid } = req.body;
 
     if (!titulo || !youtubeid) {
         return res.status(400).json({ erro: 'Título e ID do YouTube são obrigatórios' });
+    }
+
+    // Input validation
+    if (typeof titulo !== 'string' || titulo.length > 200) {
+        return res.status(400).json({ erro: 'Título inválido (máx. 200 caracteres)' });
+    }
+    if (typeof youtubeid !== 'string' || !/^[a-zA-Z0-9_-]{11}$/.test(youtubeid)) {
+        return res.status(400).json({ erro: 'YouTube ID inválido (deve ter 11 caracteres alfanuméricos)' });
     }
 
     const sql = `
@@ -211,12 +395,20 @@ app.post('/api/videos', (req, res) => {
         });
 });
 
-app.put('/api/videos/:id', (req, res) => {
+app.put('/api/videos/:id', requireAuth, writeLimiter, (req, res) => {
     const { id } = req.params;
     const { titulo, descricao, youtubeid } = req.body;
 
     if (!titulo || !youtubeid) {
         return res.status(400).json({ erro: 'Título e YouTube ID são obrigatórios' });
+    }
+
+    // Input validation
+    if (typeof titulo !== 'string' || titulo.length > 200) {
+        return res.status(400).json({ erro: 'Título inválido (máx. 200 caracteres)' });
+    }
+    if (typeof youtubeid !== 'string' || !/^[a-zA-Z0-9_-]{11}$/.test(youtubeid)) {
+        return res.status(400).json({ erro: 'YouTube ID inválido' });
     }
 
     const sql = `
@@ -239,7 +431,7 @@ app.put('/api/videos/:id', (req, res) => {
         });
 });
 
-app.delete('/api/videos/:id', (req, res) => {
+app.delete('/api/videos/:id', requireAuth, writeLimiter, (req, res) => {
     const { id } = req.params;
 
     db.query('DELETE FROM videos WHERE id = $1 RETURNING *', [id])

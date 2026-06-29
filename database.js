@@ -11,9 +11,9 @@ const connectionString = process.env.DATABASE_URL;
 // Criar conexão com o banco de dados PostgreSQL
 const db = new Pool({
     connectionString: connectionString,
-    ssl: {
-        rejectUnauthorized: false // Obrigatório para conexões seguras na Render
-    }
+    ssl: connectionString ? {
+        rejectUnauthorized: process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'false'
+    } : false
 });
 
 // Testar a conexão inicial

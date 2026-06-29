@@ -167,45 +167,70 @@
 
     <script>
         /**
-         * Autenticação simples no login
+         * Autenticação via servidor (API)
          */
-        document.getElementById('loginForm').addEventListener('submit', function(e) {
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
             e.preventDefault();
 
             const usuario = document.getElementById('usuario').value;
             const senha = document.getElementById('senha').value;
             const errorMsg = document.getElementById('errorMsg');
 
-            // Credenciais padrão (em produção, fazer com backend)
-            const usuarioCorreto = 'admin';
-            const senhaCorreto = 'admin123';
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ usuario, senha })
+                });
 
-            if (usuario === usuarioCorreto && senha === senhaCorreto) {
-                // Salvar autenticação no localStorage
-                localStorage.setItem('adminAutenticado', 'true');
-                localStorage.setItem('adminUsuario', usuario);
-                
-                // Redirecionar para o painel admin
-                window.location.href = 'admin.html';
-            } else {
-                errorMsg.textContent = '❌ Usuário ou senha incorretos!';
+                const data = await response.json();
+
+                if (response.ok && data.token) {
+                    // Salvar token de sessão
+                    localStorage.setItem('adminAutenticado', 'true');
+                    localStorage.setItem('adminUsuario', usuario);
+                    localStorage.setItem('adminToken', data.token);
+
+                    // Redirecionar para o painel admin
+                    window.location.href = 'admin.html';
+                } else {
+                    errorMsg.textContent = data.erro || '❌ Usuário ou senha incorretos!';
+                    errorMsg.classList.add('show');
+
+                    document.getElementById('senha').value = '';
+
+                    setTimeout(() => {
+                        errorMsg.classList.remove('show');
+                    }, 5000);
+                }
+            } catch (err) {
+                errorMsg.textContent = '❌ Erro de conexão. Verifique se o servidor está ativo.';
                 errorMsg.classList.add('show');
-                
-                // Limpar campos
-                document.getElementById('usuario').value = '';
-                document.getElementById('senha').value = '';
-                
-                // Remover mensagem após 5 segundos
                 setTimeout(() => {
                     errorMsg.classList.remove('show');
                 }, 5000);
             }
         });
 
-        // Se já está autenticado, redirecionar
-        if (localStorage.getItem('adminAutenticado') === 'true') {
-            window.location.href = 'admin.html';
-        }
+        // Se já está autenticado, verificar token com servidor
+        (async function() {
+            const token = localStorage.getItem('adminToken');
+            if (token) {
+                try {
+                    const res = await fetch('/api/auth/verify', {
+                        headers: { 'Authorization': 'Bearer ' + token }
+                    });
+                    if (res.ok) {
+                        window.location.href = 'admin.html';
+                    } else {
+                        localStorage.removeItem('adminAutenticado');
+                        localStorage.removeItem('adminToken');
+                    }
+                } catch (e) {
+                    // Server unavailable, stay on login page
+                }
+            }
+        })();
     </script>
 </body>
 </html>

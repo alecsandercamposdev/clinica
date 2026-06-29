@@ -8,14 +8,51 @@ const API_URL = '/api';
 let profissionalEditId = null;
 let videoEditId = null;
 let fotoOriginalProfissional = null;
+
+/**
+ * Get auth headers for API requests
+ */
+function getAuthHeaders() {
+    const token = localStorage.getItem('adminToken');
+    return {
+        'Content-Type': 'application/json',
+        'Authorization': token ? 'Bearer ' + token : ''
+    };
+}
+
+/**
+ * Sanitize text for safe HTML insertion (prevent XSS)
+ */
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = String(text);
+    return div.innerHTML;
+}
 /**
  * Verificar se usuário está autenticado
  */
-function verificarAutenticacao() {
-    if (localStorage.getItem('adminAutenticado') !== 'true') {
+async function verificarAutenticacao() {
+    const token = localStorage.getItem('adminToken');
+    if (!token) {
         window.location.href = 'admin-login.html';
+        return;
     }
-    
+
+    try {
+        const res = await fetch(`${API_URL}/auth/verify`, {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        if (!res.ok) {
+            localStorage.removeItem('adminAutenticado');
+            localStorage.removeItem('adminToken');
+            window.location.href = 'admin-login.html';
+            return;
+        }
+    } catch (e) {
+        // Server unavailable, allow cached session for now
+    }
+
     const usuario = localStorage.getItem('adminUsuario');
     document.getElementById('usuarioLogado').textContent = usuario || 'admin';
 }
@@ -23,10 +60,19 @@ function verificarAutenticacao() {
 /**
  * Logout
  */
-function logout() {
+async function logout() {
     if (confirm('Tem certeza que deseja sair?')) {
+        try {
+            await fetch(`${API_URL}/auth/logout`, {
+                method: 'POST',
+                headers: getAuthHeaders()
+            });
+        } catch (e) {
+            // Continue with local logout even if server call fails
+        }
         localStorage.removeItem('adminAutenticado');
         localStorage.removeItem('adminUsuario');
+        localStorage.removeItem('adminToken');
         window.location.href = 'admin-login.html';
     }
 }
@@ -116,15 +162,15 @@ async function listarProfissionais() {
     lista.innerHTML = profissionais.map(prof => `
         <div class="profissional-item">
             <div class="profissional-item-img">
-                ${prof.foto ? `<img src="${prof.foto}" alt="${prof.nome}">` : '👤'}
+                ${prof.foto ? `<img src="${escapeHtml(prof.foto)}" alt="${escapeHtml(prof.nome)}">` : '👤'}
             </div>
             <div class="profissional-item-info">
-                <div class="profissional-item-name">${prof.nome}</div>
-                <div class="profissional-item-specialty">${prof.especialidade}</div>
-                <div class="profissional-item-cro">${prof.cadastroMedico}</div>
+                <div class="profissional-item-name">${escapeHtml(prof.nome)}</div>
+                <div class="profissional-item-specialty">${escapeHtml(prof.especialidade)}</div>
+                <div class="profissional-item-cro">${escapeHtml(prof.cadastroMedico || prof.cadastromedico)}</div>
                 <div class="profissional-item-actions">
-                    <button class="btn-edit" onclick="editarProfissional(${prof.id})">✏️ Editar</button>
-                    <button class="btn-delete" onclick="deletarProfissional(${prof.id})">🗑️ Deletar</button>
+                    <button class="btn-edit" onclick="editarProfissional(${parseInt(prof.id)})">✏️ Editar</button>
+                    <button class="btn-delete" onclick="deletarProfissional(${parseInt(prof.id)})">🗑️ Deletar</button>
                 </div>
             </div>
         </div>
@@ -193,10 +239,14 @@ document.getElementById('profissionalForm')?.addEventListener('submit', async fu
     try {
         const response = await fetch(`${API_URL}/profissionais`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: getAuthHeaders(),
             body: JSON.stringify(novoProfissional)
         });
 
+        if (response.status === 401) {
+            window.location.href = 'admin-login.html';
+            return;
+        }
         if (!response.ok) throw new Error('Erro ao salvar');
 
         // Mostrar mensagem de sucesso
@@ -285,10 +335,14 @@ const profissionalAtualizado = {
     try {
         const response = await fetch(`${API_URL}/profissionais/${profissionalEditId}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: getAuthHeaders(),
             body: JSON.stringify(profissionalAtualizado)
         });
 
+        if (response.status === 401) {
+            window.location.href = 'admin-login.html';
+            return;
+        }
         if (!response.ok) throw new Error('Erro ao atualizar');
 
         const successMsg = document.getElementById('editSuccessMsg');
@@ -317,9 +371,14 @@ async function deletarProfissional(id) {
 
     try {
         const response = await fetch(`${API_URL}/profissionais/${id}`, {
-            method: 'DELETE'
+            method: 'DELETE',
+            headers: getAuthHeaders()
         });
 
+        if (response.status === 401) {
+            window.location.href = 'admin-login.html';
+            return;
+        }
         if (!response.ok) throw new Error('Erro ao deletar');
 
         atualizarDashboard();
@@ -381,12 +440,12 @@ async function listarVideos() {
                 📹
             </div>
             <div class="video-item-info">
-                <div class="video-item-title">${video.titulo}</div>
-                <div class="video-item-id">ID: ${video.youtubeid}</div>
-                ${video.descricao ? `<p style="font-size: 0.9rem; color: var(--cor-texto-light); margin-bottom: var(--espaco-md);">${video.descricao}</p>` : ''}
+                <div class="video-item-title">${escapeHtml(video.titulo)}</div>
+                <div class="video-item-id">ID: ${escapeHtml(video.youtubeid)}</div>
+                ${video.descricao ? `<p style="font-size: 0.9rem; color: var(--cor-texto-light); margin-bottom: var(--espaco-md);">${escapeHtml(video.descricao)}</p>` : ''}
                 <div class="video-item-actions" style="display: flex; gap: var(--espaco-md);">
-                    <button class="btn-edit" onclick="editarVideo(${video.id})" style="flex: 1; padding: var(--espaco-md); background: var(--cor-destaque); color: var(--cor-branco); border: none; border-radius: 5px; cursor: pointer; font-weight: bold; transition: all var(--transicao-normal);">✏️ Editar</button>
-                    <button class="btn-delete" onclick="deletarVideo(${video.id})" style="flex: 1; padding: var(--espaco-md); background: var(--cor-erro); color: var(--cor-branco); border: none; border-radius: 5px; cursor: pointer; font-weight: bold; transition: all var(--transicao-normal);">🗑️ Deletar</button>
+                    <button class="btn-edit" onclick="editarVideo(${parseInt(video.id)})" style="flex: 1; padding: var(--espaco-md); background: var(--cor-destaque); color: var(--cor-branco); border: none; border-radius: 5px; cursor: pointer; font-weight: bold; transition: all var(--transicao-normal);">✏️ Editar</button>
+                    <button class="btn-delete" onclick="deletarVideo(${parseInt(video.id)})" style="flex: 1; padding: var(--espaco-md); background: var(--cor-erro); color: var(--cor-branco); border: none; border-radius: 5px; cursor: pointer; font-weight: bold; transition: all var(--transicao-normal);">🗑️ Deletar</button>
                 </div>
             </div>
         </div>
@@ -408,10 +467,14 @@ document.getElementById('videoForm')?.addEventListener('submit', async function(
     try {
         const response = await fetch(`${API_URL}/videos`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: getAuthHeaders(),
             body: JSON.stringify(novoVideo)
         });
 
+        if (response.status === 401) {
+            window.location.href = 'admin-login.html';
+            return;
+        }
         if (!response.ok) throw new Error('Erro ao salvar');
 
         // Mostrar mensagem de sucesso
@@ -481,10 +544,14 @@ document.getElementById('videoEditForm')?.addEventListener('submit', async funct
     try {
         const response = await fetch(`${API_URL}/videos/${videoEditId}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: getAuthHeaders(),
             body: JSON.stringify(videoAtualizado)
         });
 
+        if (response.status === 401) {
+            window.location.href = 'admin-login.html';
+            return;
+        }
         if (!response.ok) throw new Error('Erro ao atualizar');
 
         const successMsg = document.getElementById('editVideoSuccessMsg');
@@ -512,9 +579,14 @@ async function deletarVideo(id) {
 
     try {
         const response = await fetch(`${API_URL}/videos/${id}`, {
-            method: 'DELETE'
+            method: 'DELETE',
+            headers: getAuthHeaders()
         });
 
+        if (response.status === 401) {
+            window.location.href = 'admin-login.html';
+            return;
+        }
         if (!response.ok) throw new Error('Erro ao deletar');
 
         listarVideos();
