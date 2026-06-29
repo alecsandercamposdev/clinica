@@ -391,9 +391,13 @@ function inicializarDados() {
     });
 }
 
-app.listen(PORT, () => {
-    // Aguardar um pouco para as tabelas as síncronas estarem prontas no Postgres
-    setTimeout(inicializarDados, 1500);
+if (require.main === module) {
+    app.listen(PORT, () => {
+        // Aguardar um pouco para as tabelas as síncronas estarem prontas no Postgres
+        setTimeout(inicializarDados, 1500);
 
-    console.log(`🚀 Servidor escutando perfeitamente na porta ${PORT}`);
-});
+        console.log(`🚀 Servidor escutando perfeitamente na porta ${PORT}`);
+    });
+}
+
+module.exports = app;
