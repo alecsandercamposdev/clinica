@@ -311,6 +311,13 @@
         (function () {
             const API_URL = '/api';
 
+            function esc(text) {
+                if (!text) return '';
+                const d = document.createElement('div');
+                d.textContent = String(text);
+                return d.innerHTML;
+            }
+
             async function carregarProfissionais() {
                 const res = await fetch(`${API_URL}/profissionais`);
                 if (!res.ok) throw new Error('Erro ao carregar profissionais');
@@ -331,14 +338,15 @@
                 }
 
                 grid.innerHTML = profissionais.map(prof => {
-                    const foto = prof.foto ? prof.foto : './img/Clinica.png';
+                    const foto = prof.foto ? esc(prof.foto) : './img/Clinica.png';
+                    const safeId = parseInt(prof.id);
                     return `
-                        <a class="medico-card" href="profissional.html?id=${prof.id}">
+                        <a class="medico-card" href="profissional.html?id=${safeId}">
                             <div class="medico-image">
-                                <img src="${foto}" alt="${prof.nome}" loading="lazy">
+                                <img src="${foto}" alt="${esc(prof.nome)}" loading="lazy">
                             </div>
-                            <h3 class="medico-name">${prof.nome}</h3>
-                            <p class="medico-specialty">${prof.especialidade || ''}</p>
+                            <h3 class="medico-name">${esc(prof.nome)}</h3>
+                            <p class="medico-specialty">${esc(prof.especialidade || '')}</p>
                         </a>
                     `;
                 }).join('');

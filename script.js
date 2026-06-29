@@ -6,6 +6,16 @@
 
 const API_URL = '/api';
 
+/**
+ * Sanitize text for safe HTML insertion (prevent XSS)
+ */
+function escapeHtmlPublic(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = String(text);
+    return div.innerHTML;
+}
+
 // ================================================
 // FUNCIONALIDADES DE NAVEGAÇÃO
 // ================================================
@@ -262,23 +272,28 @@ async function atualizarVideosEducativos() {
         }
         
         // Renderizar vídeos da API
-        videosGrid.innerHTML = videos.map(video => `
+        videosGrid.innerHTML = videos.map(video => {
+            // Validate YouTube ID format to prevent XSS via iframe src
+            const safeYoutubeId = /^[a-zA-Z0-9_-]{11}$/.test(video.youtubeid) ? video.youtubeid : '';
+            if (!safeYoutubeId) return ''; // Skip invalid entries
+            return `
             <article class="video-card">
                 <div class="video-container">
                     <iframe 
                         width="100%" 
                         height="250" 
-                        src="https://www.youtube.com/embed/${video.youtubeid}" 
-                        title="${video.titulo}"
+                        src="https://www.youtube.com/embed/${safeYoutubeId}" 
+                        title="${escapeHtmlPublic(video.titulo)}"
                         frameborder="0" 
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
                         allowfullscreen>
                     </iframe>
                 </div>
-                <h3 class="video-title">${video.titulo}</h3>
-                <p class="video-descricao">${video.descricao || 'Conteúdo educativo sobre saúde bucal.'}</p>
+                <h3 class="video-title">${escapeHtmlPublic(video.titulo)}</h3>
+                <p class="video-descricao">${escapeHtmlPublic(video.descricao) || 'Conteúdo educativo sobre saúde bucal.'}</p>
             </article>
-        `).join('');
+        `;
+        }).join('');
     } catch (erro) {
         console.error('Erro ao carregar vídeos:', erro);
         const videosGrid = document.querySelector('.videos-grid');
