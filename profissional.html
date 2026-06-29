@@ -265,6 +265,7 @@
         </div>
     </footer>
 
+    <script src="utils.js"></script>
     <script src="script.js"></script>
     <script>
         /**
@@ -272,7 +273,6 @@
          */
         async function carregarProfissional() {
             try {
-                // Obter o ID do profissional da URL
                 const params = new URLSearchParams(window.location.search);
                 const profissionalId = params.get('id');
 
@@ -281,17 +281,7 @@
                     return;
                 }
 
-                const API_URL = '/api';
-
-                const response = await fetch(`${API_URL}/profissionais`);
-                if (!response.ok) {
-                    throw new Error('Erro ao carregar dados');
-                }
-
-                const profissionais = await response.json();
-
-
-                // Encontrar o profissional pelo ID
+                const profissionais = await fetchApi('/profissionais');
                 const profissional = profissionais.find(p => p.id === parseInt(profissionalId));
 
                 if (!profissional) {
@@ -299,7 +289,6 @@
                     return;
                 }
 
-                // Renderizar os detalhes
                 renderizarProfissional(profissional);
             } catch (erro) {
                 console.error('Erro ao carregar profissional:', erro);

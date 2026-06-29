@@ -2,9 +2,9 @@
  * FACCES - Clínica Dentária
  * JavaScript Funcional
  * Navegação suave, menu responsivo e validação de formulário
+ *
+ * Depende de: utils.js (API_URL, fetchApi, renderizarVazio)
  */
-
-const API_URL = '/api';
 
 // ================================================
 // FUNCIONALIDADES DE NAVEGAÇÃO
@@ -246,18 +246,10 @@ async function atualizarVideosEducativos() {
         const videosGrid = document.querySelector('.videos-grid');
         if (!videosGrid) return;
         
-        // Carregar vídeos da API
-        const response = await fetch('/api/videos');
-        if (!response.ok) throw new Error('Erro ao carregar vídeos');
-        
-        const videos = await response.json();
+        const videos = await fetchApi('/videos');
         
         if (videos.length === 0) {
-            videosGrid.innerHTML = `
-                <div style="grid-column: 1/-1; text-align: center; padding: 3rem; color: #666;">
-                    <p>📭 Nenhum vídeo educativo disponível no momento.</p>
-                </div>
-            `;
+            videosGrid.innerHTML = renderizarVazio('Nenhum vídeo educativo disponível no momento.');
             return;
         }
         
@@ -283,11 +275,7 @@ async function atualizarVideosEducativos() {
         console.error('Erro ao carregar vídeos:', erro);
         const videosGrid = document.querySelector('.videos-grid');
         if (videosGrid) {
-            videosGrid.innerHTML = `
-                <div style="grid-column: 1/-1; text-align: center; padding: 3rem; color: #999;">
-                    <p>⚠️ Erro ao carregar vídeos. Tente novamente mais tarde.</p>
-                </div>
-            `;
+            videosGrid.innerHTML = renderizarVazio('Erro ao carregar vídeos. Tente novamente mais tarde.');
         }
     }
 }
@@ -304,7 +292,7 @@ function rastrearAcesso() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({})
-    }).catch(err => console.log('Acesso registrado localmente'));
+    }).catch(() => console.log('Acesso registrado localmente'));
 }
 
 /**
@@ -316,24 +304,22 @@ function rastrearConversao(tipo = 'whatsapp') {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ tipo })
     }).then(() => {
-        console.log(`✅ Conversão rastreada: ${tipo}`);
-    }).catch(err => console.log('Conversão registrada localmente'));
+        console.log(`Conversão rastreada: ${tipo}`);
+    }).catch(() => console.log('Conversão registrada localmente'));
 }
 
 /**
  * Inicializar rastreamento de cliques de conversão
  */
 function inicializarRastreamentoConversoes() {
-    // Rastrear cliques no WhatsApp
     const botoesWhatsapp = document.querySelectorAll('.btn-whatsapp, [href*="wa.me"]');
     botoesWhatsapp.forEach(botao => {
         botao.addEventListener('click', () => rastrearConversao('whatsapp'));
     });
     
-    // Rastrear envio de formulário de contato (se houver)
     const formContato = document.querySelector('form[name="contato"], form[id*="contato"]');
     if (formContato) {
-        formContato.addEventListener('submit', (e) => {
+        formContato.addEventListener('submit', () => {
             rastrearConversao('formulario');
         });
     }
@@ -356,7 +342,7 @@ document.addEventListener('DOMContentLoaded', () => {
     rastrearAcesso();
     inicializarRastreamentoConversoes();
 
-    console.log('🦷 FACCES - Clínica Dentária iniciada com sucesso!');
+    console.log('FACCES - Clínica Dentária iniciada com sucesso!');
 });
 
 // ================================================

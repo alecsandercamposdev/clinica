@@ -2,12 +2,15 @@
  * FACCES Admin Panel - JavaScript
  * Gerenciar profissionais com CRUD completo
  * Integração com API REST
+ *
+ * Depende de: utils.js (fetchApi, enviarApi, mostrarErro,
+ *             mostrarMensagemSucesso, renderizarVazio, converterParaBase64)
  */
 
-const API_URL = '/api';
 let profissionalEditId = null;
 let videoEditId = null;
 let fotoOriginalProfissional = null;
+
 /**
  * Verificar se usuário está autenticado
  */
@@ -31,14 +34,13 @@ function logout() {
     }
 }
 
-/**
- * Carregar profissionais da API
- */
+// ================================================
+// CARREGAMENTO DE DADOS
+// ================================================
+
 async function carregarProfissionais() {
     try {
-        const response = await fetch(`${API_URL}/profissionais`);
-        if (!response.ok) throw new Error('Erro ao carregar profissionais');
-        return await response.json();
+        return await fetchApi('/profissionais');
     } catch (erro) {
         console.error('Erro ao carregar profissionais:', erro);
         mostrarErro('Erro ao conectar com o banco de dados. Verifique se o servidor está rodando.');
@@ -46,70 +48,51 @@ async function carregarProfissionais() {
     }
 }
 
-/**
- * Mostrar mensagem de erro
- */
-function mostrarErro(mensagem) {
-    const errorDiv = document.createElement('div');
-    errorDiv.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        background: #FF6B6B;
-        color: white;
-        padding: 15px 20px;
-        border-radius: 5px;
-        z-index: 10000;
-        font-weight: bold;
-    `;
-    errorDiv.textContent = '❌ ' + mensagem;
-    document.body.appendChild(errorDiv);
-    
-    setTimeout(() => errorDiv.remove(), 5000);
+async function carregarVideos() {
+    try {
+        return await fetchApi('/videos');
+    } catch (erro) {
+        console.error('Erro ao carregar vídeos:', erro);
+        mostrarErro('Erro ao conectar com o banco de dados');
+        return [];
+    }
 }
 
-/**
- * Atualizar dashboard com dados da API
- */
+// ================================================
+// DASHBOARD
+// ================================================
+
 async function atualizarDashboard() {
     try {
-        // Carregar profissionais
         const profissionais = await carregarProfissionais();
         const elemProf = document.getElementById('totalProfissionais');
         if (elemProf) elemProf.textContent = profissionais.length;
         
-        // Carregar métricas
-        const response = await fetch(`${API_URL}/metricas/total/geral`);
-        if (response.ok) {
-            const metricas = await response.json();
-            
-            const elemAcessos = document.getElementById('totalAcessos');
-            const elemConversoes = document.getElementById('totalConversoes');
-            const elemTaxa = document.getElementById('taxaConversao');
-            
-            if (elemAcessos) elemAcessos.textContent = metricas.totalAcessos;
-            if (elemConversoes) elemConversoes.textContent = metricas.totalConversoes;
-            if (elemTaxa) elemTaxa.textContent = metricas.taxaConversao + '%';
-        }
+        const metricas = await fetchApi('/metricas/total/geral');
+        
+        const elemAcessos = document.getElementById('totalAcessos');
+        const elemConversoes = document.getElementById('totalConversoes');
+        const elemTaxa = document.getElementById('taxaConversao');
+        
+        if (elemAcessos) elemAcessos.textContent = metricas.totalAcessos;
+        if (elemConversoes) elemConversoes.textContent = metricas.totalConversoes;
+        if (elemTaxa) elemTaxa.textContent = metricas.taxaConversao + '%';
     } catch (erro) {
         console.error('Erro ao atualizar dashboard:', erro);
     }
 }
 
-/**
- * Listar profissionais
- */
+// ================================================
+// PROFISSIONAIS - CRUD
+// ================================================
+
 async function listarProfissionais() {
     const profissionais = await carregarProfissionais();
     const lista = document.getElementById('profissionaisList');
     
     if (profissionais.length === 0) {
-        lista.innerHTML = `
-            <div class="admin-empty" style="grid-column: 1/-1;">
-                <p>📭 Nenhum profissional cadastrado ainda.</p>
-                <p>Use a opção "Novo Profissional" para adicionar.</p>
-            </div>
-        `;
+        lista.innerHTML = renderizarVazio('Nenhum profissional cadastrado ainda.') +
+            '<p style="text-align:center;color:var(--cor-texto-light);">Use a opção "Novo Profissional" para adicionar.</p>';
         return;
     }
     
@@ -129,18 +112,6 @@ async function listarProfissionais() {
             </div>
         </div>
     `).join('');
-}
-
-/**
- * Converter imagem para Base64
- */
-function converterParaBase64(file) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-    });
 }
 
 /**
@@ -191,27 +162,12 @@ document.getElementById('profissionalForm')?.addEventListener('submit', async fu
     };
     
     try {
-        const response = await fetch(`${API_URL}/profissionais`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(novoProfissional)
-        });
+        await enviarApi('/profissionais', 'POST', novoProfissional);
 
-        if (!response.ok) throw new Error('Erro ao salvar');
-
-        // Mostrar mensagem de sucesso
-        const successMsg = document.getElementById('successMsg');
-        successMsg.textContent = '✅ Profissional cadastrado com sucesso!';
-        successMsg.classList.add('show');
+        mostrarMensagemSucesso('successMsg', '✅ Profissional cadastrado com sucesso!');
         
-        // Limpar formulário
         document.getElementById('profissionalForm').reset();
         document.getElementById('fotoPreview').innerHTML = '';
-        
-        // Remover mensagem após 3 segundos
-        setTimeout(() => {
-            successMsg.classList.remove('show');
-        }, 3000);
         
         atualizarDashboard();
         listarProfissionais();
@@ -273,32 +229,21 @@ document.getElementById('profissionalEditForm')?.addEventListener('submit', asyn
         fotoAtualizada = await converterParaBase64(novaFoto);
     }
 
-const profissionalAtualizado = {
+    const profissionalAtualizado = {
         nome: document.getElementById('editNome').value,
         especialidade: document.getElementById('editEspecialidade').value,
         cadastroMedico: document.getElementById('editCadastro').value,
         apresentacao: document.getElementById('editApresentacao').value,
         atuacao: document.getElementById('editAtuacao').value,
         foto: fotoAtualizada ? fotoAtualizada : fotoOriginalProfissional
-    }
+    };
 
     try {
-        const response = await fetch(`${API_URL}/profissionais/${profissionalEditId}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(profissionalAtualizado)
-        });
+        await enviarApi(`/profissionais/${profissionalEditId}`, 'PUT', profissionalAtualizado);
 
-        if (!response.ok) throw new Error('Erro ao atualizar');
+        mostrarMensagemSucesso('editSuccessMsg', '✅ Profissional atualizado com sucesso!');
 
-        const successMsg = document.getElementById('editSuccessMsg');
-        successMsg.textContent = '✅ Profissional atualizado com sucesso!';
-        successMsg.classList.add('show');
-
-        setTimeout(() => {
-            successMsg.classList.remove('show');
-            cancelarEdicao();
-        }, 3000);
+        setTimeout(() => cancelarEdicao(), 3000);
 
         atualizarDashboard();
         listarProfissionais();
@@ -316,62 +261,28 @@ async function deletarProfissional(id) {
     }
 
     try {
-        const response = await fetch(`${API_URL}/profissionais/${id}`, {
-            method: 'DELETE'
-        });
-
-        if (!response.ok) throw new Error('Erro ao deletar');
+        await enviarApi(`/profissionais/${id}`, 'DELETE', {});
 
         atualizarDashboard();
         listarProfissionais();
         
-        const successMsg = document.getElementById('successMsg');
-        successMsg.textContent = '✅ Profissional deletado com sucesso!';
-        successMsg.classList.add('show');
-        
-        setTimeout(() => {
-            successMsg.classList.remove('show');
-        }, 3000);
+        mostrarMensagemSucesso('successMsg', '✅ Profissional deletado com sucesso!');
     } catch (erro) {
         mostrarErro('Erro ao deletar profissional: ' + erro.message);
     }
 }
 
-/**
- * ========================================
- * FUNÇÕES PARA GERENCIAMENTO DE VÍDEOS
- * ========================================
- */
+// ================================================
+// VÍDEOS - CRUD
+// ================================================
 
-/**
- * Carregar vídeos da API
- */
-async function carregarVideos() {
-    try {
-        const response = await fetch(`${API_URL}/videos`);
-        if (!response.ok) throw new Error('Erro ao carregar vídeos');
-        return await response.json();
-    } catch (erro) {
-        console.error('Erro ao carregar vídeos:', erro);
-        mostrarErro('Erro ao conectar com o banco de dados');
-        return [];
-    }
-}
-
-/**
- * Listar vídeos na interface
- */
 async function listarVideos() {
     const videos = await carregarVideos();
     const lista = document.getElementById('videosList');
     
     if (videos.length === 0) {
-        lista.innerHTML = `
-            <div class="admin-empty" style="grid-column: 1/-1;">
-                <p>📭 Nenhum vídeo cadastrado ainda.</p>
-                <p>Use o formulário acima para adicionar um novo vídeo!</p>
-            </div>
-        `;
+        lista.innerHTML = renderizarVazio('Nenhum vídeo cadastrado ainda.') +
+            '<p style="text-align:center;color:var(--cor-texto-light);">Use o formulário acima para adicionar um novo vídeo!</p>';
         return;
     }
     
@@ -406,28 +317,12 @@ document.getElementById('videoForm')?.addEventListener('submit', async function(
     };
     
     try {
-        const response = await fetch(`${API_URL}/videos`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(novoVideo)
-        });
+        await enviarApi('/videos', 'POST', novoVideo);
 
-        if (!response.ok) throw new Error('Erro ao salvar');
-
-        // Mostrar mensagem de sucesso
-        const successMsg = document.getElementById('videoSuccessMsg');
-        successMsg.textContent = '✅ Vídeo cadastrado com sucesso!';
-        successMsg.classList.add('show');
+        mostrarMensagemSucesso('videoSuccessMsg', '✅ Vídeo cadastrado com sucesso!');
         
-        // Limpar formulário
         document.getElementById('videoForm').reset();
         
-        // Remover mensagem após 3 segundos
-        setTimeout(() => {
-            successMsg.classList.remove('show');
-        }, 3000);
-        
-        // Atualizar lista de vídeos
         listarVideos();
     } catch (erro) {
         mostrarErro('Erro ao cadastrar vídeo: ' + erro.message);
@@ -479,22 +374,11 @@ document.getElementById('videoEditForm')?.addEventListener('submit', async funct
     };
 
     try {
-        const response = await fetch(`${API_URL}/videos/${videoEditId}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(videoAtualizado)
-        });
+        await enviarApi(`/videos/${videoEditId}`, 'PUT', videoAtualizado);
 
-        if (!response.ok) throw new Error('Erro ao atualizar');
+        mostrarMensagemSucesso('editVideoSuccessMsg', '✅ Vídeo atualizado com sucesso!');
 
-        const successMsg = document.getElementById('editVideoSuccessMsg');
-        successMsg.textContent = '✅ Vídeo atualizado com sucesso!';
-        successMsg.classList.add('show');
-
-        setTimeout(() => {
-            successMsg.classList.remove('show');
-            cancelarEdicaoVideo();
-        }, 3000);
+        setTimeout(() => cancelarEdicaoVideo(), 3000);
 
         listarVideos();
     } catch (erro) {
@@ -511,35 +395,24 @@ async function deletarVideo(id) {
     }
 
     try {
-        const response = await fetch(`${API_URL}/videos/${id}`, {
-            method: 'DELETE'
-        });
-
-        if (!response.ok) throw new Error('Erro ao deletar');
+        await enviarApi(`/videos/${id}`, 'DELETE', {});
 
         listarVideos();
         
-        const successMsg = document.getElementById('videoSuccessMsg');
-        successMsg.textContent = '✅ Vídeo deletado com sucesso!';
-        successMsg.classList.add('show');
-        
-        setTimeout(() => {
-            successMsg.classList.remove('show');
-        }, 3000);
+        mostrarMensagemSucesso('videoSuccessMsg', '✅ Vídeo deletado com sucesso!');
     } catch (erro) {
         mostrarErro('Erro ao deletar vídeo: ' + erro.message);
     }
 }
 
-/**
- * Mostrar seção específica
- */
+// ================================================
+// NAVEGAÇÃO DO PAINEL
+// ================================================
+
 function mostrarSecao(secaoId) {
-    // Remover active de todas as seções
     document.querySelectorAll('.admin-section').forEach(s => s.classList.remove('active'));
     document.querySelectorAll('.menu-btn').forEach(b => b.classList.remove('active'));
     
-    // Adicionar active na seção e botão especificados
     const secao = document.getElementById(secaoId);
     if (secao) {
         secao.classList.add('active');
@@ -550,7 +423,6 @@ function mostrarSecao(secaoId) {
         botao.classList.add('active');
     }
     
-    // Carregar conteúdo específico quando a seção é ativada
     if (secaoId === 'profissionais') {
         listarProfissionais();
     } else if (secaoId === 'videos') {
@@ -558,9 +430,6 @@ function mostrarSecao(secaoId) {
     }
 }
 
-/**
- * Inicializar evento de clique dos botões do menu
- */
 function inicializarMenuBotoes() {
     document.querySelectorAll('.menu-btn').forEach(btn => {
         btn.addEventListener('click', function() {
@@ -578,7 +447,6 @@ document.addEventListener('DOMContentLoaded', function() {
     inicializarMenuBotoes();
     atualizarDashboard();
     
-    // Atualizar dashboard a cada 5 segundos (métricas em tempo real)
     setInterval(() => {
         atualizarDashboard();
     }, 5000);

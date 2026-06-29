@@ -16,23 +16,6 @@ const app = express();
 // A Render define a porta automaticamente pela variável de ambiente PORT. Se não houver, usa 3000.
 const PORT = process.env.PORT || 3000;
 
-// ================================================
-// CAMADA DE COMPATIBILIDADE POSTGRESQL (Para manter suas rotas funcionando)
-// ================================================
-db.all = function(query, params, callback) {
-    if (typeof params === 'function') { callback = params; params = []; }
-    this.query(query.replace(/\?/g, (match, index) => `$${index + 1}`), params)
-        .then(res => callback(null, res.rows))
-        .catch(err => callback(err));
-};
-
-db.get = function(query, params, callback) {
-    if (typeof params === 'function') { callback = params; params = []; }
-    this.query(query.replace(/\?/g, (match, index) => `$${index + 1}`), params)
-        .then(res => callback(null, res.rows[0] || null))
-        .catch(err => callback(err));
-};
-
 // Middleware
 app.use(cors());
 app.use(bodyParser.json({ limit: '50mb' }));
@@ -47,19 +30,65 @@ app.get('/', (req, res) => {
 });
 
 // ================================================
-// ROTA DE IMPORTAÇÃO DE DADOS
+// UTILITÁRIOS DE ROTA
 // ================================================
 
-app.post('/api/importar-profissionais', (req, res) => {
+function handleDbError(res, err, uniqueMsg) {
+    if (uniqueMsg && (err.message.includes('unique') || err.message.includes('Key ('))) {
+        return res.status(400).json({ erro: uniqueMsg });
+    }
+    res.status(500).json({ erro: err.message });
+}
+
+function registrarRotasListar(rota, tabela) {
+    app.get(rota, (req, res) => {
+        db.all(`SELECT * FROM ${tabela} ORDER BY id ASC`, (err, rows) => {
+            if (err) return res.status(500).json({ erro: err.message });
+            res.json(rows || []);
+        });
+    });
+}
+
+function registrarRotaDeletar(rota, tabela, nomeEntidade) {
+    app.delete(`${rota}/:id`, (req, res) => {
+        const { id } = req.params;
+
+        db.query(`DELETE FROM ${tabela} WHERE id = $1 RETURNING *`, [id])
+            .then(result => {
+                if (result.rowCount === 0) return res.status(404).json({ erro: `${nomeEntidade} não encontrado` });
+                res.json({ mensagem: `✅ ${nomeEntidade} deletado com sucesso` });
+            })
+            .catch(err => res.status(500).json({ erro: err.message }));
+    });
+}
+
+// ================================================
+// IMPORTAÇÃO DE PROFISSIONAIS (lógica compartilhada)
+// ================================================
+
+const IMPORT_SQL = `
+    INSERT INTO profissionais (nome, especialidade, cadastroMedico, apresentacao, foto)
+    VALUES ($1, $2, $3, $4, $5)
+`;
+
+function lerProfissionaisJson() {
     const jsonPath = path.join(__dirname, 'profissionais.json');
-    
-    if (!fs.existsSync(jsonPath)) {
-        res.status(404).json({ erro: 'Arquivo profissionais.json não encontrado' });
-        return;
+    if (!fs.existsSync(jsonPath)) return null;
+    return JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
+}
+
+function importarProfissional(prof) {
+    return db.query(IMPORT_SQL, [prof.nome, prof.especialidade, prof.cadastroMedico, prof.apresentacao, prof.foto]);
+}
+
+app.post('/api/importar-profissionais', (req, res) => {
+    const dados = lerProfissionaisJson();
+
+    if (dados === null) {
+        return res.status(404).json({ erro: 'Arquivo profissionais.json não encontrado' });
     }
 
     try {
-        const dados = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
         let importados = 0;
         let erros = 0;
 
@@ -76,12 +105,7 @@ app.post('/api/importar-profissionais', (req, res) => {
 
             // Importar cada profissional
             dados.forEach(prof => {
-                const sql = `
-                    INSERT INTO profissionais (nome, especialidade, cadastroMedico, apresentacao, foto)
-                    VALUES ($1, $2, $3, $4, $5)
-                `;
-
-                db.query(sql, [prof.nome, prof.especialidade, prof.cadastroMedico, prof.apresentacao, prof.foto])
+                importarProfissional(prof)
                     .then(() => { importados++; })
                     .catch(() => { erros++; })
                     .finally(() => {
@@ -105,12 +129,7 @@ app.post('/api/importar-profissionais', (req, res) => {
 // ROTAS PARA PROFISSIONAIS
 // ================================================
 
-app.get('/api/profissionais', (req, res) => {
-    db.all('SELECT * FROM profissionais ORDER BY id ASC', (err, rows) => {
-        if (err) return res.status(500).json({ erro: err.message });
-        res.json(rows || []);
-    });
-});
+registrarRotasListar('/api/profissionais', 'profissionais');
 
 app.get('/api/profissionais/:id', (req, res) => {
     const { id } = req.params;
@@ -140,7 +159,7 @@ app.post('/api/profissionais', (req, res) => {
                 mensagem: '✅ Profissional criado com sucesso'
             });
         })
-        .catch(err => res.status(500).json({ erro: err.message }));
+        .catch(err => handleDbError(res, err));
 });
 
 app.put('/api/profissionais/:id', (req, res) => {
@@ -158,30 +177,16 @@ app.put('/api/profissionais/:id', (req, res) => {
             if (result.rowCount === 0) return res.status(404).json({ erro: 'Profissional não encontrado' });
             res.json({ mensagem: '✅ Profissional atualizado com sucesso' });
         })
-        .catch(err => res.status(500).json({ erro: err.message }));
+        .catch(err => handleDbError(res, err));
 });
 
-app.delete('/api/profissionais/:id', (req, res) => {
-    const { id } = req.params;
-
-    db.query('DELETE FROM profissionais WHERE id = $1 RETURNING *', [id])
-        .then(result => {
-            if (result.rowCount === 0) return res.status(404).json({ erro: 'Profissional não encontrado' });
-            res.json({ mensagem: '✅ Profissional deletado com sucesso' });
-        })
-        .catch(err => res.status(500).json({ erro: err.message }));
-});
+registrarRotaDeletar('/api/profissionais', 'profissionais', 'Profissional');
 
 // ================================================
 // ROTAS PARA VÍDEOS
 // ================================================
 
-app.get('/api/videos', (req, res) => {
-    db.all('SELECT * FROM videos ORDER BY id ASC', (err, rows) => {
-        if (err) return res.status(500).json({ erro: err.message });
-        res.json(rows || []);
-    });
-});
+registrarRotasListar('/api/videos', 'videos');
 
 app.post('/api/videos', (req, res) => {
     const { titulo, descricao, youtubeid } = req.body;
@@ -202,13 +207,7 @@ app.post('/api/videos', (req, res) => {
                 mensagem: '✅ Vídeo criado com sucesso'
             });
         })
-        .catch(err => {
-            if (err.message.includes('unique') || err.message.includes('Key (youtubeid)')) {
-                res.status(400).json({ erro: 'Este vídeo já foi cadastrado' });
-            } else {
-                res.status(500).json({ erro: err.message });
-            }
-        });
+        .catch(err => handleDbError(res, err, 'Este vídeo já foi cadastrado'));
 });
 
 app.put('/api/videos/:id', (req, res) => {
@@ -230,29 +229,19 @@ app.put('/api/videos/:id', (req, res) => {
             if (result.rowCount === 0) return res.status(404).json({ erro: 'Vídeo não encontrado' });
             res.json({ mensagem: '✅ Vídeo atualizado com sucesso' });
         })
-        .catch(err => {
-            if (err.message.includes('unique') || err.message.includes('Key (youtubeid)')) {
-                res.status(400).json({ erro: 'Este YouTube ID já foi cadastrado' });
-            } else {
-                res.status(500).json({ erro: err.message });
-            }
-        });
+        .catch(err => handleDbError(res, err, 'Este YouTube ID já foi cadastrado'));
 });
 
-app.delete('/api/videos/:id', (req, res) => {
-    const { id } = req.params;
-
-    db.query('DELETE FROM videos WHERE id = $1 RETURNING *', [id])
-        .then(result => {
-            if (result.rowCount === 0) return res.status(404).json({ erro: 'Vídeo não encontrado' });
-            res.json({ mensagem: '✅ Vídeo deletado com sucesso' });
-        })
-        .catch(err => res.status(500).json({ erro: err.message }));
-});
+registrarRotaDeletar('/api/videos', 'videos', 'Vídeo');
 
 // ================================================
 // ROTAS PARA MÉTRICAS
 // ================================================
+
+function parseConversoesPorTipo(raw) {
+    if (!raw) return {};
+    return typeof raw === 'string' ? JSON.parse(raw) : raw;
+}
 
 app.get('/api/metricas', (req, res) => {
     const hoje = new Date().toISOString().split('T')[0];
@@ -269,12 +258,7 @@ app.get('/api/metricas', (req, res) => {
             });
         }
 
-        // Garante o parse correto do JSON da coluna de texto
-        if (typeof row.conversoesportipo === 'string') {
-            row.conversoesPorTipo = JSON.parse(row.conversoesportipo || '{}');
-        } else {
-            row.conversoesPorTipo = row.conversoesportipo || {};
-        }
+        row.conversoesPorTipo = parseConversoesPorTipo(row.conversoesportipo || row.conversoesPorTipo);
         res.json(row);
     });
 });
@@ -317,11 +301,7 @@ app.post('/api/metricas/conversao', (req, res) => {
         if (err) return res.status(500).json({ erro: err.message });
 
         const rawConversoes = row ? (row.conversoesportipo || row.conversoesPorTipo) : null;
-        let conversoesPorTipo = {};
-        
-        if (rawConversoes) {
-            conversoesPorTipo = typeof rawConversoes === 'string' ? JSON.parse(rawConversoes) : rawConversoes;
-        }
+        let conversoesPorTipo = parseConversoesPorTipo(rawConversoes);
 
         if (!row) {
             conversoesPorTipo[tipo] = 1;
@@ -365,25 +345,15 @@ function inicializarDados() {
 
         if (count === 0) {
             console.log('📥 Importando profissionais do JSON...');
-            const jsonPath = path.join(__dirname, 'profissionais.json');
+            const dados = lerProfissionaisJson();
 
-            if (fs.existsSync(jsonPath)) {
-                try {
-                    const dados = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
+            if (dados) {
+                dados.forEach(prof => {
+                    importarProfissional(prof)
+                        .catch(err => console.error('❌ Erro ao importar:', err));
+                });
 
-                    dados.forEach(prof => {
-                        const sql = `
-                            INSERT INTO profissionais (nome, especialidade, cadastroMedico, apresentacao, foto)
-                            VALUES ($1, $2, $3, $4, $5)
-                        `;
-                        db.query(sql, [prof.nome, prof.especialidade, prof.cadastroMedico, prof.apresentacao, prof.foto])
-                          .catch(err => console.error('❌ Erro ao importar:', err));
-                    });
-
-                    console.log(`✅ ${dados.length} profissionais importados com sucesso!`);
-                } catch (err) {
-                    console.error('❌ Erro ao processar profissionais.json:', err);
-                }
+                console.log(`✅ ${dados.length} profissionais importados com sucesso!`);
             }
         } else {
             console.log(`✅ ${count} profissionais já cadastrados no banco`);
