@@ -19,16 +19,21 @@ const PORT = process.env.PORT || 3000;
 // ================================================
 // CAMADA DE COMPATIBILIDADE POSTGRESQL (Para manter suas rotas funcionando)
 // ================================================
+function replaceQuestionMarks(query) {
+    let i = 0;
+    return query.replace(/\?/g, () => `$${++i}`);
+}
+
 db.all = function(query, params, callback) {
     if (typeof params === 'function') { callback = params; params = []; }
-    this.query(query.replace(/\?/g, (match, index) => `$${index + 1}`), params)
+    this.query(replaceQuestionMarks(query), params)
         .then(res => callback(null, res.rows))
         .catch(err => callback(err));
 };
 
 db.get = function(query, params, callback) {
     if (typeof params === 'function') { callback = params; params = []; }
-    this.query(query.replace(/\?/g, (match, index) => `$${index + 1}`), params)
+    this.query(replaceQuestionMarks(query), params)
         .then(res => callback(null, res.rows[0] || null))
         .catch(err => callback(err));
 };
@@ -83,7 +88,10 @@ app.post('/api/importar-profissionais', (req, res) => {
 
                 db.query(sql, [prof.nome, prof.especialidade, prof.cadastroMedico, prof.apresentacao, prof.foto])
                     .then(() => { importados++; })
-                    .catch(() => { erros++; })
+                    .catch(err => {
+                        erros++;
+                        console.error(`Erro ao importar profissional "${prof.nome}":`, err.message);
+                    })
                     .finally(() => {
                         if (importados + erros === dados.length) {
                             res.json({
@@ -269,11 +277,15 @@ app.get('/api/metricas', (req, res) => {
             });
         }
 
-        // Garante o parse correto do JSON da coluna de texto
-        if (typeof row.conversoesportipo === 'string') {
-            row.conversoesPorTipo = JSON.parse(row.conversoesportipo || '{}');
-        } else {
-            row.conversoesPorTipo = row.conversoesportipo || {};
+        try {
+            if (typeof row.conversoesportipo === 'string') {
+                row.conversoesPorTipo = JSON.parse(row.conversoesportipo || '{}');
+            } else {
+                row.conversoesPorTipo = row.conversoesportipo || {};
+            }
+        } catch (parseErr) {
+            console.error('Erro ao parsear conversoesPorTipo:', parseErr.message);
+            row.conversoesPorTipo = {};
         }
         res.json(row);
     });
@@ -320,7 +332,12 @@ app.post('/api/metricas/conversao', (req, res) => {
         let conversoesPorTipo = {};
         
         if (rawConversoes) {
-            conversoesPorTipo = typeof rawConversoes === 'string' ? JSON.parse(rawConversoes) : rawConversoes;
+            try {
+                conversoesPorTipo = typeof rawConversoes === 'string' ? JSON.parse(rawConversoes) : rawConversoes;
+            } catch (parseErr) {
+                console.error('Erro ao parsear conversoesPorTipo:', parseErr.message);
+                conversoesPorTipo = {};
+            }
         }
 
         if (!row) {
@@ -351,6 +368,14 @@ app.get('/api/saude', (req, res) => {
 });
 
 // ================================================
+// MIDDLEWARE GLOBAL DE TRATAMENTO DE ERROS
+// ================================================
+app.use((err, req, res, _next) => {
+    console.error('Erro não tratado na rota', req.method, req.originalUrl, '-', err.message);
+    res.status(500).json({ erro: 'Erro interno do servidor' });
+});
+
+// ================================================
 // INICIALIZAR SERVIDOR
 // ================================================
 
@@ -370,6 +395,8 @@ function inicializarDados() {
             if (fs.existsSync(jsonPath)) {
                 try {
                     const dados = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
+                    let importados = 0;
+                    let erros = 0;
 
                     dados.forEach(prof => {
                         const sql = `
@@ -377,13 +404,22 @@ function inicializarDados() {
                             VALUES ($1, $2, $3, $4, $5)
                         `;
                         db.query(sql, [prof.nome, prof.especialidade, prof.cadastroMedico, prof.apresentacao, prof.foto])
-                          .catch(err => console.error('❌ Erro ao importar:', err));
+                          .then(() => { importados++; })
+                          .catch(importErr => {
+                              erros++;
+                              console.error(`❌ Erro ao importar "${prof.nome}":`, importErr.message);
+                          })
+                          .finally(() => {
+                              if (importados + erros === dados.length) {
+                                  console.log(`✅ Importação concluída: ${importados} importados, ${erros} erros de ${dados.length} total`);
+                              }
+                          });
                     });
-
-                    console.log(`✅ ${dados.length} profissionais importados com sucesso!`);
                 } catch (err) {
                     console.error('❌ Erro ao processar profissionais.json:', err);
                 }
+            } else {
+                console.warn('⚠️ Arquivo profissionais.json não encontrado para importação inicial');
             }
         } else {
             console.log(`✅ ${count} profissionais já cadastrados no banco`);

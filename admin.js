@@ -90,9 +90,13 @@ async function atualizarDashboard() {
             if (elemAcessos) elemAcessos.textContent = metricas.totalAcessos;
             if (elemConversoes) elemConversoes.textContent = metricas.totalConversoes;
             if (elemTaxa) elemTaxa.textContent = metricas.taxaConversao + '%';
+        } else {
+            console.error('Erro ao carregar métricas:', response.status, response.statusText);
+            mostrarErro('Erro ao carregar métricas do dashboard');
         }
     } catch (erro) {
         console.error('Erro ao atualizar dashboard:', erro);
+        mostrarErro('Erro ao atualizar dashboard: ' + erro.message);
     }
 }
 
@@ -149,9 +153,13 @@ function converterParaBase64(file) {
 document.getElementById('foto')?.addEventListener('change', async function(e) {
     const file = e.target.files[0];
     if (file) {
-        const preview = document.getElementById('fotoPreview');
-        const base64 = await converterParaBase64(file);
-        preview.innerHTML = `<img src="${base64}" alt="Preview">`;
+        try {
+            const preview = document.getElementById('fotoPreview');
+            const base64 = await converterParaBase64(file);
+            preview.innerHTML = `<img src="${base64}" alt="Preview">`;
+        } catch (erro) {
+            mostrarErro('Erro ao processar imagem. Tente outro arquivo.');
+        }
     }
 });
 
@@ -161,9 +169,13 @@ document.getElementById('foto')?.addEventListener('change', async function(e) {
 document.getElementById('editFoto')?.addEventListener('change', async function(e) {
     const file = e.target.files[0];
     if (file) {
-        const preview = document.getElementById('editFotoPreview');
-        const base64 = await converterParaBase64(file);
-        preview.innerHTML = `<img src="${base64}" alt="Preview">`;
+        try {
+            const preview = document.getElementById('editFotoPreview');
+            const base64 = await converterParaBase64(file);
+            preview.innerHTML = `<img src="${base64}" alt="Preview">`;
+        } catch (erro) {
+            mostrarErro('Erro ao processar imagem. Tente outro arquivo.');
+        }
     }
 });
 
@@ -197,7 +209,10 @@ document.getElementById('profissionalForm')?.addEventListener('submit', async fu
             body: JSON.stringify(novoProfissional)
         });
 
-        if (!response.ok) throw new Error('Erro ao salvar');
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.erro || 'Erro ao salvar');
+        }
 
         // Mostrar mensagem de sucesso
         const successMsg = document.getElementById('successMsg');
@@ -289,7 +304,10 @@ const profissionalAtualizado = {
             body: JSON.stringify(profissionalAtualizado)
         });
 
-        if (!response.ok) throw new Error('Erro ao atualizar');
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.erro || 'Erro ao atualizar');
+        }
 
         const successMsg = document.getElementById('editSuccessMsg');
         successMsg.textContent = '✅ Profissional atualizado com sucesso!';
@@ -320,7 +338,10 @@ async function deletarProfissional(id) {
             method: 'DELETE'
         });
 
-        if (!response.ok) throw new Error('Erro ao deletar');
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.erro || 'Erro ao deletar');
+        }
 
         atualizarDashboard();
         listarProfissionais();
@@ -412,7 +433,10 @@ document.getElementById('videoForm')?.addEventListener('submit', async function(
             body: JSON.stringify(novoVideo)
         });
 
-        if (!response.ok) throw new Error('Erro ao salvar');
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.erro || 'Erro ao salvar');
+        }
 
         // Mostrar mensagem de sucesso
         const successMsg = document.getElementById('videoSuccessMsg');
@@ -485,7 +509,10 @@ document.getElementById('videoEditForm')?.addEventListener('submit', async funct
             body: JSON.stringify(videoAtualizado)
         });
 
-        if (!response.ok) throw new Error('Erro ao atualizar');
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.erro || 'Erro ao atualizar');
+        }
 
         const successMsg = document.getElementById('editVideoSuccessMsg');
         successMsg.textContent = '✅ Vídeo atualizado com sucesso!';
@@ -515,7 +542,10 @@ async function deletarVideo(id) {
             method: 'DELETE'
         });
 
-        if (!response.ok) throw new Error('Erro ao deletar');
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.erro || 'Erro ao deletar');
+        }
 
         listarVideos();
         
