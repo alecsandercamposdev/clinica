@@ -304,7 +304,7 @@ function rastrearAcesso() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({})
-    }).catch(err => console.log('Acesso registrado localmente'));
+    }).catch(err => console.warn('Falha ao registrar acesso:', err.message));
 }
 
 /**
@@ -317,7 +317,7 @@ function rastrearConversao(tipo = 'whatsapp') {
         body: JSON.stringify({ tipo })
     }).then(() => {
         console.log(`✅ Conversão rastreada: ${tipo}`);
-    }).catch(err => console.log('Conversão registrada localmente'));
+    }).catch(err => console.warn(`Falha ao registrar conversão (${tipo}):`, err.message));
 }
 
 /**

@@ -20,11 +20,17 @@ const db = new Pool({
 db.connect((err, client, release) => {
     if (err) {
         console.error('❌ Erro ao conectar ao banco de dados PostgreSQL:', err.stack);
+        console.error('❌ O servidor não poderá processar requisições ao banco de dados.');
+        process.exit(1);
     } else {
         console.log('✅ Conectado ao banco de dados PostgreSQL na Render!');
         release();
         inicializarBancoDados();
     }
+});
+
+db.on('error', (err) => {
+    console.error('❌ Erro inesperado no pool de conexões PostgreSQL:', err.message);
 });
 
 /**
@@ -76,6 +82,7 @@ async function inicializarBancoDados() {
 
     } catch (err) {
         console.error('❌ Erro ao inicializar tabelas:', err);
+        process.exit(1);
     }
 }
 
@@ -85,7 +92,9 @@ db.run = function(query, params, callback) {
         callback = params;
         params = [];
     }
-    this.query(query.replace(/\?/g, (match, index) => `$${index + 1}`), params)
+    let i = 0;
+    const pgQuery = query.replace(/\?/g, () => `$${++i}`);
+    this.query(pgQuery, params)
         .then(res => callback && callback(null, res))
         .catch(err => callback && callback(err));
 };
